@@ -4,6 +4,7 @@ import (
 	"distribution-system/config"
 	"distribution-system/middleware"
 	"distribution-system/models"
+	"distribution-system/utils"
 	"log"
 	"net/http"
 
@@ -39,10 +40,17 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// 明码比对密码
-	if user.Password != req.Password {
+	// 校验密码（兼容历史明码，bcrypt 优先）
+	if !utils.CheckPassword(user.Password, req.Password) {
 		c.JSON(http.StatusUnauthorized, gin.H{"code": 401, "message": "用户名或密码错误"})
 		return
+	}
+
+	// 登录时自动升级：历史明码密码在校验通过后重新哈希入库
+	if !utils.IsHashed(user.Password) {
+		if hashed, err := utils.HashPassword(req.Password); err == nil {
+			config.DB.Model(&models.User{}).Where("id = ?", user.ID).Update("password", hashed)
+		}
 	}
 
 	// 检查账号状态 - 管理员永远可以登录
@@ -91,10 +99,17 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	// 密码哈希后存储
+	hashedPwd, err := utils.HashPassword(req.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": "注册失败"})
+		return
+	}
+
 	// 创建用户
 	user := models.User{
 		Username: req.Username,
-		Password: req.Password, // 明码存储
+		Password: hashedPwd,
 		Nickname: req.Nickname,
 		Phone:    req.Phone,
 		Role:     "user",

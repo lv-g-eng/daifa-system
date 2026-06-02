@@ -1,0 +1,206 @@
+/* =========================================================
+   代发系统 · 现代化设计系统（小红书清爽亮色风）
+   覆盖层：在 style.css 之后加载，重定义设计令牌 + 响应式增强
+   不修改任何 JS 逻辑，纯样式换肤
+   ========================================================= */
+
+:root {
+  /* —— 主色：小红书红 —— */
+  --primary-color: #ff2442;
+  --primary-light: #ff5c72;
+  --primary-dark: #e01f3d;
+  --primary-gradient: linear-gradient(135deg, #ff2442 0%, #ff6b81 100%);
+
+  /* —— 状态色 —— */
+  --success-color: #07c160;
+  --warning-color: #ff976a;
+  --danger-color: #fa5151;
+
+  /* —— 文字 —— */
+  --text-primary: #1a1a1a;
+  --text-secondary: #6b6b6b;
+  --text-muted: #b0b0b0;
+
+  /* —— 背景与边框 —— */
+  --border-color: #f0f0f0;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f7f8fa;
+  --bg-tertiary: #f4f5f7;
+
+  /* —— 阴影：更柔和 —— */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-xl: 0 16px 40px rgba(0, 0, 0, 0.1);
+
+  /* —— 圆角：更圆润 —— */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.75rem;
+}
+
+/* —— 全局基底 —— */
+body {
+  background: var(--bg-secondary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* —— 按钮：圆润 + 主色渐变 + 轻微浮起 —— */
+.btn {
+  border-radius: 999px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+.btn-primary {
+  background: var(--primary-gradient);
+  border: none;
+  box-shadow: 0 4px 12px rgba(255, 36, 66, 0.25);
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(255, 36, 66, 0.32);
+}
+.btn-primary:active { transform: translateY(0); }
+.btn-success { background: var(--success-color); border: none; }
+.btn-danger { background: var(--danger-color); border: none; }
+.btn-outline {
+  border: 1.5px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+.btn-outline:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* —— 卡片：圆润 + 柔和阴影 + 悬浮 —— */
+.card,
+.stat-card,
+.material-card,
+.task-card {
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.card:hover,
+.stat-card:hover,
+.material-card:hover,
+.task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* —— 表单输入：圆润 + 主色聚焦环 —— */
+.form-input,
+.form-select,
+.form-textarea,
+input[type="text"],
+input[type="password"],
+input[type="url"],
+input[type="number"],
+input[type="tel"],
+textarea,
+select {
+  border-radius: var(--radius-md);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(255, 36, 66, 0.12);
+  outline: none;
+}
+
+/* —— 徽章 / 标签 —— */
+.badge, .tag, .status-badge {
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+/* —— 链接主色 —— */
+a { color: var(--primary-color); }
+
+/* —— 顶部导航品牌色 —— */
+.navbar-brand, .logo, .brand { color: var(--primary-color); }
+
+/* =========================================================
+   响应式增强（移动端自适应）
+   ========================================================= */
+
+/* 宽表格在小屏可横向滚动，避免溢出/挤压 */
+@media (max-width: 768px) {
+  .table-responsive,
+  .table-wrapper,
+  .card > table,
+  .data-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  table {
+    min-width: 560px;
+  }
+  /* 容器留白收紧 */
+  .container,
+  .page-container,
+  .content {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  /* 统计卡片单/双列自适应 */
+  .stats-grid,
+  .stat-grid,
+  .cards-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem !important;
+  }
+  /* 弹窗移动端近全屏、底部圆角 */
+  .modal {
+    max-width: 94vw !important;
+    width: 94vw !important;
+    border-radius: var(--radius-xl) !important;
+  }
+  /* 按钮组在窄屏换行 */
+  .btn-group,
+  .actions,
+  .toolbar {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  /* 表格操作按钮缩小 */
+  .btn-sm {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid,
+  .stat-grid,
+  .cards-grid {
+    grid-template-columns: 1fr !important;
+  }
+  h1 { font-size: 1.4rem; }
+  h2 { font-size: 1.2rem; }
+  /* 顶栏标题不溢出 */
+  .navbar-brand, .logo, .brand {
+    font-size: 1.05rem;
+  }
+}
+
+/* iOS 安全区适配（底部导航/按钮不被遮挡） */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .bottom-nav,
+  .tabbar,
+  .fixed-bottom {
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+  }
+}

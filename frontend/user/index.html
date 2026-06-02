@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/design-system.css">
 </head>
 
 <body>
@@ -106,8 +107,8 @@
                 <!-- 统计卡片 - 可点击 -->
                 <div class="grid grid-4" id="refStatsGrid" style="gap: 1rem; margin-bottom: 1.5rem;">
                     <div class="stat-card stat-card-clickable" onclick="showSection('submissions')"
-                        style="border-top: 4px solid #6366f1; padding: 1.25rem;">
-                        <div class="stat-value" style="font-size: 1.75rem; color: #6366f1;" id="totalSubmissions">0
+                        style="border-top: 4px solid #ff2442; padding: 1.25rem;">
+                        <div class="stat-value" style="font-size: 1.75rem; color: #ff2442;" id="totalSubmissions">0
                         </div>
                         <div class="stat-label" style="font-size: 0.8rem; margin-top: 0.5rem;">总提交</div>
                     </div>
@@ -122,8 +123,8 @@
                         <div class="stat-label" style="font-size: 0.8rem; margin-top: 0.5rem;">待审核</div>
                     </div>
                     <div class="stat-card stat-card-clickable" onclick="showSection('wallet')"
-                        style="border-top: 4px solid #8b5cf6; padding: 1.25rem;">
-                        <div class="stat-value" style="font-size: 1.75rem; color: #8b5cf6;" id="balanceValue">¥0.00
+                        style="border-top: 4px solid #ff6b81; padding: 1.25rem;">
+                        <div class="stat-value" style="font-size: 1.75rem; color: #ff6b81;" id="balanceValue">¥0.00
                         </div>
                         <div class="stat-label" style="font-size: 0.8rem; margin-top: 0.5rem;">可用余额</div>
                     </div>
@@ -333,7 +334,7 @@
 
                 <!-- 余额卡片 -->
                 <div class="stat-card"
-                    style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; text-align: center; margin-bottom: 1.5rem; padding: 2rem;">
+                    style="background: linear-gradient(135deg, #ff2442 0%, #ff6b81 100%); color: white; text-align: center; margin-bottom: 1.5rem; padding: 2rem;">
                     <div style="font-size: 0.875rem; opacity: 0.8; margin-bottom: 0.5rem;">可提现余额
                     </div>
                     <div style="font-size: 3rem; font-weight: 700;" id="walletBalance">¥0.00</div>
@@ -536,7 +537,7 @@
                         </div>
                         <div class="wechat-menu-item" onclick="handleMobileMenuClick('promo')">
                             <div class="menu-icon"
-                                style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
+                                style="background: linear-gradient(135deg, #ff2442 0%, #ff6b81 100%);">
                                 <i class="fas fa-link"></i>
                             </div>
                             <div class="menu-text">用户推广</div>
@@ -1697,7 +1698,7 @@
                 container.innerHTML = tasks.map((t, index) => {
                     // 渐变色数组 - 为不同任务分配不同的渐变色
                     const gradients = [
-                        'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        'linear-gradient(135deg, #ff2442 0%, #ff6b81 100%)',
                         'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
                         'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
                         'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
@@ -2076,7 +2077,7 @@
                         <div class="material-image-item" onclick="viewLargeImage(decodeURIComponent('${enc}'))">
                             <img src="${u}" data-alt-src="${alt}" onerror="handleMaterialImageError(this)">
                             <div class="material-image-overlay">
-                                <button onclick="event.stopPropagation(); downloadFile(decodeURIComponent('${enc}'), 'image_${idx + 1}.jpg')">
+                                <button onclick="event.stopPropagation(); downloadFile(decodeURIComponent('${enc}'), '${buildMediaName(m, idx, 'jpg')}')">
                                     <i class="fas fa-download"></i>
                                 </button>
                             </div>
@@ -2102,7 +2103,7 @@
                                 <source src="${u}" type="video/mp4">
                             </video>
                             <div style="text-align: right; margin-top: 0.5rem;">
-                                <button class="btn btn-sm btn-outline" onclick="downloadFile(decodeURIComponent('${enc}'), 'video_${idx + 1}.mp4')">
+                                <button class="btn btn-sm btn-outline" onclick="downloadFile(decodeURIComponent('${enc}'), '${buildMediaName(m, idx, 'mp4')}')">
                                     <i class="fas fa-download"></i> 下载视频
                                 </button>
                             </div>
@@ -2268,8 +2269,23 @@
             }
         }
 
-        // 下载文件
-        function downloadFile(url, filename) {
+        // 将任意文本清理为安全文件名（去非法字符、压缩空白、限长）
+        function sanitizeFileName(name) {
+            let s = String(name || '').trim();
+            s = s.replace(/[\\/:*?"<>|\r\n\t]/g, '_').replace(/\s+/g, '_');
+            if (s.length > 40) s = s.slice(0, 40);
+            return s || '素材';
+        }
+
+        // 按任务/素材生成下载文件名：基名_序号.扩展名
+        function buildMediaName(material, idx, ext) {
+            const m = material || {};
+            const base = sanitizeFileName(m.title || m.material_no || m.materialNo || '素材');
+            return `${base}_${idx + 1}.${ext}`;
+        }
+
+        // 下载文件（同源用 fetch→blob 强制文件名，跨源回退锚点下载）
+        async function downloadFile(url, filename) {
             const primary = normalizeMediaUrl(url);
             const alt = buildAltMediaUrl(primary);
             const finalUrl = alt || primary;
@@ -2277,14 +2293,31 @@
                 showToast('下载链接无效', 'error');
                 return;
             }
-            const link = document.createElement('a');
-            link.href = finalUrl;
-            link.download = filename || 'download';
-            link.target = '_blank';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            showToast('开始下载');
+            const name = filename || 'download';
+            try {
+                const resp = await fetch(finalUrl);
+                if (!resp.ok) throw new Error('http ' + resp.status);
+                const blob = await resp.blob();
+                const objUrl = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = objUrl;
+                link.download = name;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                setTimeout(() => URL.revokeObjectURL(objUrl), 1500);
+                showToast('开始下载');
+            } catch (e) {
+                // 回退：直接锚点下载（同源仍可保留文件名）
+                const link = document.createElement('a');
+                link.href = finalUrl;
+                link.download = name;
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showToast('开始下载');
+            }
         }
 
         // 查看大图
@@ -2324,7 +2357,7 @@
                                     <div style="position: relative; aspect-ratio: 1; background: var(--bg-tertiary); border-radius: var(--radius-md); overflow: hidden; cursor: pointer;" onclick="viewLargeImage('${img}')">
                                         <img src="${img}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-image\\' style=\\'font-size:1.5rem;color:var(--text-muted);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)\\'></i>'">
                                         <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.7)); padding: 4px; text-align: right;">
-                                            <button class="btn btn-sm" style="padding: 2px 6px; background: rgba(255,255,255,0.2); color: white; border: none;" onclick="event.stopPropagation(); downloadFile('${img}', 'image_${idx + 1}.jpg')">
+                                            <button class="btn btn-sm" style="padding: 2px 6px; background: rgba(255,255,255,0.2); color: white; border: none;" onclick="event.stopPropagation(); downloadFile('${img}', '${buildMediaName(m, idx, 'jpg')}')">
                                                 <i class="fas fa-download" style="font-size: 10px;"></i>
                                             </button>
                                         </div>
@@ -2351,7 +2384,7 @@
                                             您的浏览器不支持视频播放
                                         </video>
                                         <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
-                                            <button class="btn btn-sm btn-outline" onclick="downloadFile('${video}', 'video_${idx + 1}.mp4')">
+                                            <button class="btn btn-sm btn-outline" onclick="downloadFile('${video}', '${buildMediaName(m, idx, 'mp4')}')">
                                                 <i class="fas fa-download"></i> 下载视频
                                             </button>
                                         </div>
@@ -2398,7 +2431,7 @@
                 return;
             }
             images.forEach((img, idx) => {
-                setTimeout(() => downloadFile(img, `image_${idx + 1}.jpg`), idx * 500);
+                setTimeout(() => downloadFile(img, buildMediaName(currentMaterialData, idx, 'jpg')), idx * 500);
             });
             showToast(`开始下载 ${images.length} 张图片`);
         }

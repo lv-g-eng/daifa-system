@@ -2,6 +2,7 @@ package config
 
 import (
 	"distribution-system/models"
+	"distribution-system/utils"
 	"fmt"
 	"log"
 	"os"
@@ -105,6 +106,9 @@ func InitDB() {
 		log.Println("数据库表结构同步完成!")
 	}
 
+	// 安全迁移：将历史明码密码升级为 bcrypt 哈希（幂等，已哈希的跳过）
+	migratePasswords()
+
 	// 同步parent_id：从invitations表更新到users表
 	// 修复有邀请记录但parent_id为空的用户
 	var invitations []models.Invitation
@@ -126,4 +130,30 @@ func InitDB() {
 	}
 
 	log.Println("数据库连接成功!")
+}
+
+// migratePasswords 将历史明码密码升级为 bcrypt 哈希
+// 幂等：已是哈希的记录会被跳过；空密码跳过
+func migratePasswords() {
+	var users []models.User
+	if err := DB.Find(&users).Error; err != nil {
+		log.Printf("密码迁移：读取用户失败: %v", err)
+		return
+	}
+	upgraded := 0
+	for _, u := range users {
+		if u.Password == "" || utils.IsHashed(u.Password) {
+			continue
+		}
+		hashed, err := utils.HashPassword(u.Password)
+		if err != nil {
+			continue
+		}
+		if err := DB.Model(&models.User{}).Where("id = ?", u.ID).Update("password", hashed).Error; err == nil {
+			upgraded++
+		}
+	}
+	if upgraded > 0 {
+		log.Printf("密码安全迁移完成：%d 个历史明码密码已升级为 bcrypt 哈希", upgraded)
+	}
 }

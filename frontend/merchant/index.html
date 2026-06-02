@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="/assets/css/design-system.css">
     <style>
         .upload-area {
             border: 2px dashed var(--border-color);
@@ -441,7 +442,7 @@
                         <div class="stat-label">已完成</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);"><i
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #ff2442 0%, #ff6b81 100%);"><i
                                 class="fas fa-dollar-sign"></i></div>
                         <div class="stat-value" id="totalOrderAmount">¥0</div>
                         <div class="stat-label">总金额</div>
@@ -504,7 +505,7 @@
                         <div class="stat-label">活跃用户</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);"><i
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #ff2442 0%, #ff6b81 100%);"><i
                                 class="fas fa-coins"></i></div>
                         <div class="stat-value" id="totalDistCommission">¥0.00</div>
                         <div class="stat-label">总佣金</div>
@@ -523,12 +524,12 @@
                         style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1)); border: 1px solid rgba(99, 102, 241, 0.2);">
                         <div style="display: flex; align-items: center; gap: 1rem;">
                             <div
-                                style="width: 50px; height: 50px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                style="width: 50px; height: 50px; background: linear-gradient(135deg, #ff2442 0%, #ff6b81 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
                                 <i class="fas fa-level-up-alt" style="color: white; font-size: 1.25rem;"></i>
                             </div>
                             <div>
                                 <div style="font-size: 0.875rem; color: var(--text-muted);">一级分销佣金</div>
-                                <div style="font-size: 1.5rem; font-weight: 700; color: #6366f1;" id="level1Commission">
+                                <div style="font-size: 1.5rem; font-weight: 700; color: #ff2442;" id="level1Commission">
                                     ¥0.00</div>
                                 <div style="font-size: 0.75rem; color: var(--text-muted);">直接邀请产生的佣金</div>
                             </div>
@@ -893,7 +894,7 @@
                     <div class="upload-area" id="wordUploadArea"
                         onclick="document.getElementById('wordFilesInput').click()">
                         <i class="fas fa-folder-open"
-                            style="font-size: 2.5rem; color: #6366f1; margin-bottom: 0.5rem;"></i>
+                            style="font-size: 2.5rem; color: #ff2442; margin-bottom: 0.5rem;"></i>
                         <p style="margin: 0; color: var(--text-muted);">点击选择文件夹中的所有文件</p>
                         <small style="color: var(--text-muted);">支持 .docx 文案文件 + .jpg/.png 图片</small>
                     </div>
@@ -901,7 +902,7 @@
                         style="display: none;" onchange="handleWordFilesSelect(event)">
                     <div id="wordFilesInfo" style="margin-top: 0.5rem; display: none;">
                         <div style="color: var(--text-secondary);">
-                            <i class="fas fa-file-word" style="color: #6366f1;"></i> <span id="wordFileCount">0</span>
+                            <i class="fas fa-file-word" style="color: #ff2442;"></i> <span id="wordFileCount">0</span>
                             个文档
                             <i class="fas fa-image" style="color: #f59e0b; margin-left: 1rem;"></i> <span
                                 id="wordImageCount">0</span> 张图片

@@ -35,19 +35,10 @@ function isLoggedIn() {
 
 // 退出登录
 function logout() {
-  const user = getUser();
-  const role = user?.role || '';
   removeToken();
   removeUser();
-  
-  // 根据用户角色跳转到对应的登录页
-  if (role === 'merchant') {
-    window.location.href = '/merchant/index.html';
-  } else if (role === 'admin') {
-    window.location.href = '/admin/index.html';
-  } else {
-    window.location.href = '/index.html';
-  }
+  // 统一跳转到登录页（'/' 是后端注册的路由，避免 /xxx/index.html 404）
+  window.location.href = '/';
 }
 
 // 通用请求方法

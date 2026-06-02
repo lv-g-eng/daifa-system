@@ -3,6 +3,7 @@ package handlers
 import (
 	"distribution-system/config"
 	"distribution-system/models"
+	"distribution-system/utils"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -553,8 +554,8 @@ func ChangePassword(c *gin.Context) {
 		return
 	}
 
-	// 验证旧密码
-	if user.Password != req.OldPassword {
+	// 验证旧密码（兼容历史明码）
+	if !utils.CheckPassword(user.Password, req.OldPassword) {
 		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "原密码错误"})
 		return
 	}
@@ -565,8 +566,13 @@ func ChangePassword(c *gin.Context) {
 		return
 	}
 
-	// 更新密码
-	user.Password = req.NewPassword
+	// 更新密码（哈希存储）
+	hashed, err := utils.HashPassword(req.NewPassword)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": "密码修改失败"})
+		return
+	}
+	user.Password = hashed
 	config.DB.Save(&user)
 
 	c.JSON(http.StatusOK, gin.H{

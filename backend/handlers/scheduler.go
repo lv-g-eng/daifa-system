@@ -5,7 +5,6 @@ import (
 	"distribution-system/models"
 	"fmt"
 	"log"
-	"net/http"
 	"time"
 )
 
@@ -15,8 +14,11 @@ func StartScheduledTasks() {
 	go func() {
 		for {
 			// 每次执行前读取最新的配置
+			// 兼容两个历史配置键：优先 link_check_interval，回退 auto_check_interval（init.sql 种子用的是后者）
 			var cfg models.SystemConfig
-			config.DB.Where("config_key = ?", "link_check_interval").First(&cfg)
+			if config.DB.Where("config_key = ?", "link_check_interval").First(&cfg).Error != nil || cfg.ConfigValue == "" {
+				config.DB.Where("config_key = ?", "auto_check_interval").First(&cfg)
+			}
 			interval := 1 // 默认1小时
 			if cfg.ConfigValue != "" {
 				fmt.Sscanf(cfg.ConfigValue, "%d", &interval)
@@ -210,35 +212,3 @@ func checkApprovedLinksValidity() {
 	}
 }
 
-// checkLinkRealValidityForScheduler 真实检查链接有效性 (供定时任务使用，与merchant.go中相同逻辑)
-func checkLinkRealValidityForScheduler(link string) (isValid bool, responseCode int, errorMsg string) {
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-	}
-
-	req, err := http.NewRequest("GET", link, nil)
-	if err != nil {
-		return false, 0, "创建请求失败: " + err.Error()
-	}
-
-	// 设置浏览器User-Agent模拟正常访问
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-	req.Header.Set("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return false, 0, "请求失败: " + err.Error()
-	}
-	defer resp.Body.Close()
-
-	responseCode = resp.StatusCode
-
-	// 检查HTTP状态码 - 200/301/302 都视为有效
-	if resp.StatusCode >= 200 && resp.StatusCode < 400 {
-		return true, responseCode, ""
-	}
-
-	// 404或其他错误状态码视为无效
-	return false, responseCode, fmt.Sprintf("HTTP状态码: %d", resp.StatusCode)
-}

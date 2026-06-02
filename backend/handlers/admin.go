@@ -3,6 +3,7 @@ package handlers
 import (
 	"distribution-system/config"
 	"distribution-system/models"
+	"distribution-system/utils"
 	"fmt"
 	"net/http"
 	"time"
@@ -43,9 +44,15 @@ func CreateMerchant(c *gin.Context) {
 	}
 	expireTime := time.Now().AddDate(0, 0, expireDays)
 
+	hashedPwd, err := utils.HashPassword(req.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": "创建失败"})
+		return
+	}
+
 	merchant := models.User{
 		Username:   req.Username,
-		Password:   req.Password, // 明码存储
+		Password:   hashedPwd,
 		Nickname:   req.Nickname,
 		Phone:      req.Phone,
 		Role:       "merchant",
@@ -125,7 +132,9 @@ func UpdateMerchant(c *gin.Context) {
 		merchant.Phone = req.Phone
 	}
 	if req.Password != "" {
-		merchant.Password = req.Password
+		if hashed, err := utils.HashPassword(req.Password); err == nil {
+			merchant.Password = hashed
+		}
 	}
 	if req.Status != "" {
 		merchant.Status = req.Status
