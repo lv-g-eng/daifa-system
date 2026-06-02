@@ -83,6 +83,14 @@ func main() {
 
 				// 收款码审核
 				admin.GET("/payments", handlers.ListPaymentVerifications)
+
+				// 数据导出（Excel）
+				admin.GET("/export/users", handlers.ExportAdminUsers)
+				admin.GET("/export/merchants", handlers.ExportAdminMerchants)
+				admin.GET("/export/withdrawals", handlers.ExportMerchantWithdrawals)
+
+				// 群发站内通知
+				admin.POST("/notifications/broadcast", handlers.BroadcastNotification)
 			}
 
 			// 商家后台 (merchant)

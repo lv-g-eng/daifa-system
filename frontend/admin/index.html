@@ -39,6 +39,11 @@
                         <div class="user-name" id="userName">管理员</div>
                         <div class="user-role">总管理员</div>
                     </div>
+                    <button class="btn btn-sm btn-outline" onclick="openNotificationPanel()" title="消息通知"
+                        style="position: relative;">
+                        <i class="fas fa-bell"></i>
+                        <span id="notificationBadge" style="display: none; position: absolute; top: -6px; right: -6px; min-width: 16px; height: 16px; padding: 0 4px; background: #ff2442; color: #fff; font-size: 10px; line-height: 16px; text-align: center; border-radius: 8px; font-weight: 600; box-sizing: border-box;">0</span>
+                    </button>
                     <button class="btn btn-sm btn-outline" onclick="logout()" title="退出登录">
                         <i class="fas fa-sign-out-alt"></i>
                     </button>
@@ -50,9 +55,15 @@
         <main class="main-content">
             <!-- 数据概览 -->
             <section id="dashboardSection">
-                <div class="page-header">
-                    <h1 class="page-title">数据概览</h1>
-                    <p class="page-subtitle">系统运营数据统计</p>
+                <div class="page-header"
+                    style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+                    <div>
+                        <h1 class="page-title">数据概览</h1>
+                        <p class="page-subtitle">系统运营数据统计</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="showBroadcastModal()">
+                        <i class="fas fa-bullhorn"></i> 群发公告
+                    </button>
                 </div>
 
                 <div class="grid grid-4">
@@ -135,9 +146,18 @@
                             <i class="fas fa-search"></i> 搜索
                         </button>
                     </div>
-                    <button class="btn btn-primary" onclick="showAddMerchantModal()">
-                        <i class="fas fa-plus"></i> 添加商家
-                    </button>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <input type="date" class="form-input" id="merchantExportStart" title="起始日期"
+                            style="width: 150px;">
+                        <input type="date" class="form-input" id="merchantExportEnd" title="结束日期"
+                            style="width: 150px;">
+                        <button class="btn btn-outline" onclick="exportMerchantsExcel()">
+                            <i class="fas fa-file-excel"></i> 导出Excel
+                        </button>
+                        <button class="btn btn-primary" onclick="showAddMerchantModal()">
+                            <i class="fas fa-plus"></i> 添加商家
+                        </button>
+                    </div>
                 </div>
 
                 <div class="card">
@@ -184,6 +204,15 @@
                             style="width: 220px;" onkeydown="if(event.key==='Enter')searchUsers()">
                         <button class="btn btn-outline" onclick="searchUsers()">
                             <i class="fas fa-search"></i> 搜索
+                        </button>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <input type="date" class="form-input" id="userExportStart" title="起始日期"
+                            style="width: 150px;">
+                        <input type="date" class="form-input" id="userExportEnd" title="结束日期"
+                            style="width: 150px;">
+                        <button class="btn btn-outline" onclick="exportUsersExcel()">
+                            <i class="fas fa-file-excel"></i> 导出Excel
                         </button>
                     </div>
                 </div>
@@ -319,6 +348,42 @@
         </div>
     </div>
 
+    <!-- 群发公告模态框 -->
+    <div class="modal-overlay" id="broadcastModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-bullhorn"
+                        style="color: var(--primary-color); margin-right: 6px;"></i>群发公告</h3>
+                <button class="modal-close" onclick="closeModal('broadcastModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <form onsubmit="handleBroadcast(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">标题 <span style="color: var(--danger-color)">*</span></label>
+                        <input type="text" class="form-input" id="broadcastTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">内容 <span style="color: var(--danger-color)">*</span></label>
+                        <textarea class="form-input" id="broadcastContent" rows="5" required
+                            style="resize: vertical;"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">发送对象 <span style="color: var(--danger-color)">*</span></label>
+                        <select class="form-select" id="broadcastTarget">
+                            <option value="all">全部</option>
+                            <option value="user">用户</option>
+                            <option value="merchant">商家</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('broadcastModal')">取消</button>
+                    <button type="submit" class="btn btn-primary">发送</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="toast-container"></div>
 
     <script src="/assets/js/api.js"></script>
@@ -338,6 +403,7 @@
             }
             loadStats();
             loadMerchants();
+            refreshNotificationBadge();
         });
 
         function showSection(section) {
@@ -657,6 +723,203 @@
         function closeModal(id) {
             document.getElementById(id).classList.remove('active');
         }
+
+        // ========== 数据导出 ==========
+        // 读取一对日期框，构造 range（留空即不传，导出全部）
+        function buildExportRange(startId, endId) {
+            const start = document.getElementById(startId).value;
+            const end = document.getElementById(endId).value;
+            const range = {};
+            if (start) range.start = start;
+            if (end) range.end = end;
+            return Object.keys(range).length ? range : undefined;
+        }
+
+        function exportMerchantsExcel() {
+            adminAPI.exportMerchants(buildExportRange('merchantExportStart', 'merchantExportEnd'));
+        }
+
+        function exportUsersExcel() {
+            adminAPI.exportUsers(buildExportRange('userExportStart', 'userExportEnd'));
+        }
+
+        // ========== 群发公告 ==========
+        function showBroadcastModal() {
+            document.getElementById('broadcastTitle').value = '';
+            document.getElementById('broadcastContent').value = '';
+            document.getElementById('broadcastTarget').value = 'all';
+            document.getElementById('broadcastModal').classList.add('active');
+        }
+
+        async function handleBroadcast(e) {
+            e.preventDefault();
+            const title = document.getElementById('broadcastTitle').value.trim();
+            const content = document.getElementById('broadcastContent').value.trim();
+            const target = document.getElementById('broadcastTarget').value;
+            if (!title || !content) {
+                showToast('请填写标题和内容', 'error');
+                return;
+            }
+            try {
+                const res = await adminAPI.broadcastNotification({ title, content, target });
+                if (res && res.code === 200) {
+                    const sent = (res.data && (res.data.sent_count ?? res.data.count)) ?? 0;
+                    showToast(`公告已发送（${sent} 条）`, 'success');
+                    closeModal('broadcastModal');
+                } else {
+                    showToast((res && res.message) || '发送失败', 'error');
+                }
+            } catch (err) {
+                console.error('群发公告失败:', err);
+                showToast('发送失败，请稍后重试', 'error');
+            }
+        }
+
+        // ==================== 消息通知中心 ====================
+        async function refreshNotificationBadge() {
+            try {
+                const res = await notificationAPI.unreadCount();
+                if (res && res.code === 200) {
+                    const count = (res.data && res.data.unread_count) || 0;
+                    updateNotificationBadge(count);
+                }
+            } catch (e) {
+                console.error('获取未读通知数失败:', e);
+            }
+        }
+
+        function updateNotificationBadge(count) {
+            const badge = document.getElementById('notificationBadge');
+            if (!badge) return;
+            const n = Number(count) || 0;
+            if (n > 0) {
+                badge.textContent = n > 99 ? '99+' : String(n);
+                badge.style.display = 'block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        async function openNotificationPanel() {
+            let modal = document.getElementById('notificationPanelModal');
+            if (modal) modal.remove();
+
+            modal = document.createElement('div');
+            modal.id = 'notificationPanelModal';
+            modal.className = 'modal-overlay active';
+            modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+            modal.innerHTML = `
+                <div class="modal" style="max-width: 420px; width: 92%; max-height: 80vh; background: white; border-radius: 16px; padding: 1.25rem; box-shadow: 0 8px 32px rgba(0,0,0,0.18); display: flex; flex-direction: column;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+                        <h3 style="margin: 0; font-size: 1.1rem;"><i class="fas fa-bell" style="color: var(--primary-color); margin-right: 6px;"></i>消息通知</h3>
+                        <div>
+                            <button class="btn btn-sm btn-outline" onclick="markAllNotificationsRead()" style="margin-right: 6px;">全部已读</button>
+                            <button class="btn btn-sm btn-secondary" onclick="closeNotificationPanel()">关闭</button>
+                        </div>
+                    </div>
+                    <div id="notificationListContainer" style="overflow-y: auto; flex: 1; min-height: 80px;">
+                        <div style="text-align: center; color: var(--text-muted); padding: 1.5rem 0;">加载中...</div>
+                    </div>
+                </div>
+            `;
+            modal.onclick = (e) => { if (e.target === modal) closeNotificationPanel(); };
+            document.body.appendChild(modal);
+
+            loadNotificationList();
+        }
+
+        function closeNotificationPanel() {
+            const modal = document.getElementById('notificationPanelModal');
+            if (modal) modal.remove();
+        }
+
+        async function loadNotificationList() {
+            const container = document.getElementById('notificationListContainer');
+            if (!container) return;
+            try {
+                const res = await notificationAPI.list({ page: 1, page_size: 20 });
+                if (res && res.code === 200) {
+                    const list = (res.data && res.data.list) || [];
+                    if (res.data && typeof res.data.unread_count !== 'undefined') {
+                        updateNotificationBadge(res.data.unread_count);
+                    }
+                    renderNotificationList(list);
+                } else {
+                    container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:1.5rem 0;">加载失败</div>';
+                }
+            } catch (e) {
+                console.error('加载通知列表失败:', e);
+                container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:1.5rem 0;">加载失败，请稍后重试</div>';
+            }
+        }
+
+        function renderNotificationList(list) {
+            const container = document.getElementById('notificationListContainer');
+            if (!container) return;
+            if (!list || list.length === 0) {
+                container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:2rem 0;"><i class="fas fa-inbox" style="font-size:2rem;display:block;margin-bottom:0.5rem;opacity:0.4;"></i>暂无通知</div>';
+                return;
+            }
+            container.innerHTML = list.map(item => {
+                const unread = !item.is_read;
+                const safeTitle = escapeNotificationHtml(item.title || '通知');
+                const safeContent = escapeNotificationHtml(item.content || '');
+                const timeStr = item.created_at ? formatDate(item.created_at) : '';
+                return `
+                    <div onclick="onNotificationClick(${item.id})" style="cursor: pointer; padding: 0.75rem; margin-bottom: 0.5rem; border-radius: 12px; background: ${unread ? 'rgba(255,36,66,0.06)' : '#f7f7f7'}; border: 1px solid ${unread ? 'rgba(255,36,66,0.2)' : 'transparent'};">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
+                            <div style="font-weight: 600; font-size: 0.92rem; color: var(--text-primary); display: flex; align-items: center;">
+                                ${unread ? '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ff2442;margin-right:6px;"></span>' : ''}
+                                ${safeTitle}
+                            </div>
+                            <span style="font-size: 0.7rem; color: var(--text-muted); white-space: nowrap; margin-left: 8px;">${timeStr}</span>
+                        </div>
+                        <div style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4; word-break: break-word;">${safeContent}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function escapeNotificationHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        async function onNotificationClick(id) {
+            try {
+                const res = await notificationAPI.markRead(id);
+                if (res && res.code === 200) {
+                    await loadNotificationList();
+                    refreshNotificationBadge();
+                } else {
+                    showToast((res && res.message) || '操作失败', 'error');
+                }
+            } catch (e) {
+                console.error('标记通知已读失败:', e);
+                showToast('操作失败，请稍后重试', 'error');
+            }
+        }
+
+        async function markAllNotificationsRead() {
+            try {
+                const res = await notificationAPI.markAllRead();
+                if (res && res.code === 200) {
+                    showToast('已全部标记为已读', 'success');
+                    updateNotificationBadge(0);
+                    await loadNotificationList();
+                } else {
+                    showToast((res && res.message) || '操作失败', 'error');
+                }
+            } catch (e) {
+                console.error('全部已读失败:', e);
+                showToast('操作失败，请稍后重试', 'error');
+            }
+        }
+        // ==================== 消息通知中心 END ====================
     </script>
 </body>
 

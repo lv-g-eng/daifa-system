@@ -140,6 +140,17 @@ async function uploadFiles(files) {
   return response.json();
 }
 
+// 构造日期范围查询串（range: {start,end,status} 均可选）
+function buildRangeQuery(range) {
+  if (!range) return '';
+  const p = new URLSearchParams();
+  if (range.start) p.set('start', range.start);
+  if (range.end) p.set('end', range.end);
+  if (range.status) p.set('status', range.status);
+  const s = p.toString();
+  return s ? '?' + s : '';
+}
+
 // 导出文件（带鉴权，blob 下载，强制文件名）
 async function exportFile(url, filename) {
   const token = getToken();
@@ -190,6 +201,14 @@ const adminAPI = {
   processWithdrawal: (id, status) => put(`/admin/withdrawals/${id}`, { status }),
   // 收款码审核
   listPayments: () => get('/admin/payments'),
+
+  // 数据导出（Excel，range: {start,end} 可选）
+  exportUsers: (range) => exportFile('/admin/export/users' + buildRangeQuery(range), 'users.xlsx'),
+  exportMerchants: (range) => exportFile('/admin/export/merchants' + buildRangeQuery(range), 'merchants.xlsx'),
+  exportWithdrawals: (range) => exportFile('/admin/export/withdrawals' + buildRangeQuery(range), 'withdrawals.xlsx'),
+
+  // 群发站内通知
+  broadcastNotification: (data) => post('/admin/notifications/broadcast', data),
 };
 
 // 商家后台
@@ -225,10 +244,10 @@ const merchantAPI = {
   listWithdrawals: (params) => get('/merchant/withdrawals', params),
   processWithdrawal: (id, data) => put(`/merchant/withdrawals/${id}`, data),
 
-  // 数据导出（Excel）
-  exportTasks: () => exportFile('/merchant/export/tasks', 'tasks.xlsx'),
-  exportWithdrawals: (status) => exportFile('/merchant/export/withdrawals' + (status ? '?status=' + status : ''), 'withdrawals.xlsx'),
-  exportCommissions: () => exportFile('/merchant/export/commissions', 'commissions.xlsx'),
+  // 数据导出（Excel，range: {start,end,status} 可选）
+  exportTasks: (range) => exportFile('/merchant/export/tasks' + buildRangeQuery(range), 'tasks.xlsx'),
+  exportWithdrawals: (range) => exportFile('/merchant/export/withdrawals' + buildRangeQuery(range), 'withdrawals.xlsx'),
+  exportCommissions: (range) => exportFile('/merchant/export/commissions' + buildRangeQuery(range), 'commissions.xlsx'),
 };
 
 // 用户端

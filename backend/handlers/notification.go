@@ -116,3 +116,38 @@ func MarkAllNotificationsRead(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"code": 200, "message": "全部已读"})
 }
+
+// BroadcastNotification 管理员群发站内通知（目标：user / merchant / all）
+func BroadcastNotification(c *gin.Context) {
+	var req struct {
+		Title   string `json:"title" binding:"required"`
+		Content string `json:"content" binding:"required"`
+		Target  string `json:"target"` // user, merchant, all（默认 user）
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"code": 400, "message": "参数错误"})
+		return
+	}
+
+	query := config.DB.Model(&models.User{})
+	switch req.Target {
+	case "merchant":
+		query = query.Where("role = ?", "merchant")
+	case "all":
+		// 不加角色过滤，发给全部账号
+	default:
+		query = query.Where("role = ?", "user")
+	}
+
+	var users []models.User
+	query.Find(&users)
+	for _, u := range users {
+		CreateNotification(u.ID, req.Title, req.Content, "system")
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"code":    200,
+		"message": "已群发",
+		"data":    gin.H{"count": len(users)},
+	})
+}
