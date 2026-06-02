@@ -1,0 +1,17 @@
+# 默认按内容自动处理文本/二进制
+* text=auto
+
+# 这些文件在任何平台都必须是 LF（否则 Linux 上脚本/初始化会失败）
+*.sh            text eol=lf
+docker-entrypoint.sh text eol=lf
+docker-deploy.sh     text eol=lf
+Dockerfile      text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+*.sql           text eol=lf
+*.go            text eol=lf
+
+# 二进制文件不做换行转换
+*.jpg           binary
+*.png           binary
+*.exe           binary

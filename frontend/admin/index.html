@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>总后台 - 代发系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+
+<body>
+    <div class="layout">
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">📱 代发系统</div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-item active" onclick="showSection('dashboard')">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>数据概览</span>
+                </div>
+                <div class="nav-item" onclick="showSection('merchants')">
+                    <i class="fas fa-store"></i>
+                    <span>商家管理</span>
+                </div>
+                <div class="nav-item" onclick="showSection('users')">
+                    <i class="fas fa-users"></i>
+                    <span>用户管理</span>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">A</div>
+                    <div class="user-details">
+                        <div class="user-name" id="userName">管理员</div>
+                        <div class="user-role">总管理员</div>
+                    </div>
+                    <button class="btn btn-sm btn-outline" onclick="logout()" title="退出登录">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 数据概览 -->
+            <section id="dashboardSection">
+                <div class="page-header">
+                    <h1 class="page-title">数据概览</h1>
+                    <p class="page-subtitle">系统运营数据统计</p>
+                </div>
+
+                <div class="grid grid-4">
+                    <div class="stat-card"
+                        style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white;">
+                        <div class="stat-icon" style="background: rgba(255,255,255,0.2);"><i class="fas fa-store"></i>
+                        </div>
+                        <div class="stat-value" style="color: white;" id="merchantCount">0</div>
+                        <div class="stat-label" style="color: rgba(255,255,255,0.8);">商家数量</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-users"></i></div>
+                        <div class="stat-value" id="userCount">0</div>
+                        <div class="stat-label">用户数量</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #34d399 100%);"><i
+                                class="fas fa-tasks"></i></div>
+                        <div class="stat-value" id="taskCount">0</div>
+                        <div class="stat-label">任务数量</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);"><i
+                                class="fas fa-check-circle"></i></div>
+                        <div class="stat-value" id="submissionCount">0</div>
+                        <div class="stat-label">提交数量</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-2" style="margin-top: 1.5rem;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title"><i class="fas fa-clock" style="color: var(--warning-color);"></i>
+                                待处理事项</h3>
+                        </div>
+                        <div id="pendingItems">
+                            <div style="display: flex; justify-content: space-between; padding: 0.75rem 0;">
+                                <span>即将过期商家</span>
+                                <span class="badge badge-danger" id="expiringMerchants">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title"><i class="fas fa-chart-line"
+                                    style="color: var(--success-color);"></i> 今日数据</h3>
+                        </div>
+                        <div class="grid grid-2" style="text-align: center; gap: 1rem;">
+                            <div
+                                style="padding: 1rem; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+                                <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary-color);"
+                                    id="todayUsers">0</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">今日新增用户</div>
+                            </div>
+                            <div
+                                style="padding: 1rem; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+                                <div style="font-size: 1.5rem; font-weight: 700; color: var(--success-color);"
+                                    id="todaySubmissions">0</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">今日提交数</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 商家管理 -->
+            <section id="merchantsSection" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">商家管理</h1>
+                    <p class="page-subtitle">管理商家账号</p>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <div style="display: flex; gap: 1rem;">
+                        <input type="text" class="form-input" placeholder="搜索商家..." id="searchMerchant"
+                            style="width: 300px;" onkeyup="filterMerchants()">
+                    </div>
+                    <button class="btn btn-primary" onclick="showAddMerchantModal()">
+                        <i class="fas fa-plus"></i> 添加商家
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>用户名</th>
+                                    <th>昵称</th>
+                                    <th>手机号</th>
+                                    <th>状态</th>
+                                    <th>过期时间</th>
+                                    <th>创建时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="merchantList">
+                                <tr>
+                                    <td colspan="8">
+                                        <div class="loading">
+                                            <div class="spinner"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 用户管理 -->
+            <section id="usersSection" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">用户管理</h1>
+                    <p class="page-subtitle">管理普通用户账号</p>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <input type="text" class="form-input" placeholder="搜索用户..." id="searchUser" style="width: 300px;"
+                        onkeyup="filterUsers()">
+                </div>
+
+                <div class="card">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>用户名</th>
+                                    <th>昵称</th>
+                                    <th>余额</th>
+                                    <th>状态</th>
+                                    <th>收款码</th>
+                                    <th>注册时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userList">
+                                <tr>
+                                    <td colspan="8">
+                                        <div class="loading">
+                                            <div class="spinner"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 添加商家模态框 -->
+    <div class="modal-overlay" id="addMerchantModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">添加商家</h3>
+                <button class="modal-close" onclick="closeModal('addMerchantModal')"><i
+                        class="fas fa-times"></i></button>
+            </div>
+            <form onsubmit="handleAddMerchant(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">用户名 <span style="color: var(--danger-color)">*</span></label>
+                        <input type="text" class="form-input" id="newMerchantUsername" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">密码 <span style="color: var(--danger-color)">*</span></label>
+                        <input type="password" class="form-input" id="newMerchantPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">昵称</label>
+                        <input type="text" class="form-input" id="newMerchantNickname">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">手机号</label>
+                        <input type="tel" class="form-input" id="newMerchantPhone">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">有效期（天）<span style="color: var(--danger-color)">*</span></label>
+                        <input type="number" class="form-input" id="newMerchantExpireDays" value="365" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addMerchantModal')">取消</button>
+                    <button type="submit" class="btn btn-primary">确定添加</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 编辑商家模态框 -->
+    <div class="modal-overlay" id="editMerchantModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">编辑商家</h3>
+                <button class="modal-close" onclick="closeModal('editMerchantModal')"><i
+                        class="fas fa-times"></i></button>
+            </div>
+            <form onsubmit="handleEditMerchant(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="editMerchantId">
+                    <div class="form-group">
+                        <label class="form-label">昵称</label>
+                        <input type="text" class="form-input" id="editMerchantNickname">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">手机号</label>
+                        <input type="tel" class="form-input" id="editMerchantPhone">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">新密码（留空不修改）</label>
+                        <input type="password" class="form-input" id="editMerchantPassword">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">状态</label>
+                        <select class="form-select" id="editMerchantStatus">
+                            <option value="active">正常</option>
+                            <option value="blocked">禁用</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">续期（天）</label>
+                        <input type="number" class="form-input" id="editMerchantExpireDays" placeholder="填写天数可续期">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                        onclick="closeModal('editMerchantModal')">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 收款码查看模态框 -->
+    <div class="modal-overlay" id="qrcodeModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">收款码</h3>
+                <button class="modal-close" onclick="closeModal('qrcodeModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="text-align: center;">
+                <img id="qrcodeImage" src=""
+                    style="max-width: 100%; max-height: 400px; border-radius: var(--radius-md);">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('qrcodeModal')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container"></div>
+
+    <script src="/assets/js/api.js"></script>
+    <script>
+        if (!checkRole(['admin'])) { }
+
+        let merchants = [];
+        let users = [];
+        let withdrawals = [];
+        let withdrawalFilter = 'pending';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = getUser();
+            if (user) {
+                document.getElementById('userName').textContent = user.nickname || user.username;
+                document.getElementById('userAvatar').textContent = (user.nickname || user.username).charAt(0).toUpperCase();
+            }
+            loadStats();
+            loadMerchants();
+        });
+
+        function showSection(section) {
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.querySelectorAll('main > section').forEach(s => s.style.display = 'none');
+            document.getElementById(section + 'Section').style.display = 'block';
+
+            switch (section) {
+                case 'dashboard': loadStats(); break;
+                case 'merchants': loadMerchants(); break;
+                case 'users': loadUsers(); break;
+            }
+        }
+
+        // 财务审核Tab切换
+        function switchFinanceTab(tab) {
+            // Only payments tab now, withdrawals removed
+            loadPayments();
+        }
+
+        async function loadStats() {
+            const res = await adminAPI.getStats();
+            if (res.code === 200) {
+                document.getElementById('merchantCount').textContent = res.data.merchant_count || 0;
+                document.getElementById('userCount').textContent = res.data.user_count || 0;
+                document.getElementById('taskCount').textContent = res.data.task_count || 0;
+                document.getElementById('submissionCount').textContent = res.data.submission_count || 0;
+                document.getElementById('pendingWithdrawals').textContent = res.data.pending_withdrawals || 0;
+                document.getElementById('expiringMerchants').textContent = res.data.expiring_merchants || 0;
+                document.getElementById('todayUsers').textContent = res.data.today_users || 0;
+                document.getElementById('todaySubmissions').textContent = res.data.today_submissions || 0;
+            }
+        }
+
+        // ========== 商家管理 ==========
+        async function loadMerchants() {
+            const res = await adminAPI.listMerchants();
+            if (res.code === 200) {
+                merchants = res.data || [];
+                renderMerchants();
+            }
+        }
+
+        function renderMerchants() {
+            const tbody = document.getElementById('merchantList');
+            const search = document.getElementById('searchMerchant').value.toLowerCase();
+            const filtered = merchants.filter(m =>
+                m.username.toLowerCase().includes(search) ||
+                (m.nickname || '').toLowerCase().includes(search)
+            );
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><i class="fas fa-store"></i><h3>暂无商家</h3></div></td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(m => `
+                <tr>
+                    <td>${m.id}</td>
+                    <td><strong>${m.username}</strong></td>
+                    <td>${m.nickname || '-'}</td>
+                    <td>${m.phone || '-'}</td>
+                    <td>${getStatusBadge(m.status)}</td>
+                    <td>${formatDate(m.expire_time)}</td>
+                    <td>${formatDate(m.created_at)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline" onclick="showEditMerchantModal(${m.id})"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteMerchant(${m.id})"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterMerchants() { renderMerchants(); }
+
+        function showAddMerchantModal() { document.getElementById('addMerchantModal').classList.add('active'); }
+
+        function showEditMerchantModal(id) {
+            const merchant = merchants.find(m => m.id === id);
+            if (!merchant) return;
+            document.getElementById('editMerchantId').value = id;
+            document.getElementById('editMerchantNickname').value = merchant.nickname || '';
+            document.getElementById('editMerchantPhone').value = merchant.phone || '';
+            document.getElementById('editMerchantStatus').value = merchant.status;
+            document.getElementById('editMerchantPassword').value = '';
+            document.getElementById('editMerchantExpireDays').value = '';
+            document.getElementById('editMerchantModal').classList.add('active');
+        }
+
+        async function handleAddMerchant(e) {
+            e.preventDefault();
+            const data = {
+                username: document.getElementById('newMerchantUsername').value,
+                password: document.getElementById('newMerchantPassword').value,
+                nickname: document.getElementById('newMerchantNickname').value,
+                phone: document.getElementById('newMerchantPhone').value,
+                expire_days: parseInt(document.getElementById('newMerchantExpireDays').value),
+            };
+            const res = await adminAPI.createMerchant(data);
+            if (res.code === 200) {
+                showToast('商家添加成功');
+                closeModal('addMerchantModal');
+                loadMerchants();
+                loadStats();
+                document.getElementById('newMerchantUsername').value = '';
+                document.getElementById('newMerchantPassword').value = '';
+                document.getElementById('newMerchantNickname').value = '';
+                document.getElementById('newMerchantPhone').value = '';
+            } else {
+                showToast(res.message || '添加失败', 'error');
+            }
+        }
+
+        async function handleEditMerchant(e) {
+            e.preventDefault();
+            const id = document.getElementById('editMerchantId').value;
+            const data = {
+                nickname: document.getElementById('editMerchantNickname').value,
+                phone: document.getElementById('editMerchantPhone').value,
+                status: document.getElementById('editMerchantStatus').value,
+            };
+            const password = document.getElementById('editMerchantPassword').value;
+            if (password) data.password = password;
+            const expireDays = document.getElementById('editMerchantExpireDays').value;
+            if (expireDays) data.expire_days = parseInt(expireDays);
+
+            const res = await adminAPI.updateMerchant(id, data);
+            if (res.code === 200) {
+                showToast('商家信息更新成功');
+                closeModal('editMerchantModal');
+                loadMerchants();
+            } else {
+                showToast(res.message || '更新失败', 'error');
+            }
+        }
+
+        async function deleteMerchant(id) {
+            if (!confirm('确定要删除这个商家吗？')) return;
+            const res = await adminAPI.deleteMerchant(id);
+            if (res.code === 200) {
+                showToast('商家删除成功');
+                loadMerchants();
+                loadStats();
+            } else {
+                showToast(res.message || '删除失败', 'error');
+            }
+        }
+
+        // ========== 用户管理 ==========
+        async function loadUsers() {
+            const res = await get('/admin/users');
+            if (res.code === 200) {
+                users = res.data || [];
+                renderUsers();
+            }
+        }
+
+        function renderUsers() {
+            const tbody = document.getElementById('userList');
+            const search = document.getElementById('searchUser').value.toLowerCase();
+            const filtered = users.filter(u =>
+                u.username.toLowerCase().includes(search) ||
+                (u.nickname || '').toLowerCase().includes(search)
+            );
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><i class="fas fa-users"></i><h3>暂无用户</h3></div></td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(u => `
+                <tr>
+                    <td>${u.id}</td>
+                    <td><strong>${u.username}</strong></td>
+                    <td>${u.nickname || '-'}</td>
+                    <td class="amount">${formatMoney(u.balance)}</td>
+                    <td>${getStatusBadge(u.status)}</td>
+                    <td>
+                        ${u.payment_qrcode ? `
+                            <span class="badge ${u.payment_verified ? 'badge-success' : 'badge-warning'}">${u.payment_verified ? '已验证' : '待验证'}</span>
+                            <button class="btn btn-sm btn-outline" onclick="viewQRCode('${u.payment_qrcode}')"><i class="fas fa-eye"></i></button>
+                        ` : '<span class="badge badge-secondary">未上传</span>'}
+                    </td>
+                    <td>${formatDate(u.created_at)}</td>
+                    <td>
+                        ${u.status === 'active' ?
+                    `<button class="btn btn-sm btn-danger" onclick="blockUser(${u.id}, true)"><i class="fas fa-ban"></i> 禁用</button>` :
+                    `<button class="btn btn-sm btn-success" onclick="blockUser(${u.id}, false)"><i class="fas fa-check"></i> 启用</button>`
+                }
+                        <button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id})" style="margin-left: 4px;"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterUsers() { renderUsers(); }
+
+        async function blockUser(id, block) {
+            const res = await put(`/admin/users/${id}/block`, { block });
+            if (res.code === 200) {
+                showToast(block ? '用户已禁用' : '用户已启用');
+                loadUsers();
+            } else {
+                showToast(res.message || '操作失败', 'error');
+            }
+        }
+
+        async function deleteUser(id) {
+            if (!confirm('确定要删除这个用户吗？删除后无法恢复！')) return;
+            const res = await adminAPI.deleteUser(id);
+            if (res.code === 200) {
+                showToast('用户删除成功');
+                loadUsers();
+                loadStats();
+            } else {
+                showToast(res.message || '删除失败', 'error');
+            }
+        }
+
+        // ========== 提现审核 ==========
+        async function loadWithdrawals() {
+            const res = await get('/admin/withdrawals?status=' + withdrawalFilter);
+            if (res.code === 200) {
+                withdrawals = res.data || [];
+                renderWithdrawals();
+            }
+        }
+
+        function renderWithdrawals() {
+            const tbody = document.getElementById('withdrawalList');
+            if (withdrawals.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><i class="fas fa-money-bill-wave"></i><h3>暂无提现申请</h3></div></td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = withdrawals.map(w => `
+                <tr>
+                    <td>${w.id}</td>
+                    <td><strong>${w.user?.nickname || w.user?.username || '用户' + w.user_id}</strong></td>
+                    <td class="amount amount-positive">${formatMoney(w.amount)}</td>
+                    <td>
+                        ${w.payment_method === 'wechat' ?
+                    '<i class="fab fa-weixin" style="color: #07c160;"></i> 微信' :
+                    '<i class="fab fa-alipay" style="color: #1677ff;"></i> 支付宝'}
+                    </td>
+                    <td>${w.payment_account || '-'}</td>
+                    <td>
+                        ${w.payment_qrcode ?
+                    `<button class="btn btn-sm btn-outline" onclick="viewQRCode('${w.payment_qrcode}')"><i class="fas fa-qrcode"></i> 查看</button>` :
+                    '-'
+                }
+                    </td>
+                    <td>${getStatusBadge(w.status)}</td>
+                    <td>${formatDate(w.created_at)}</td>
+                    <td>
+                        ${w.status === 'pending' ? `
+                            <button class="btn btn-sm btn-success" onclick="processWithdrawal(${w.id}, 'approved')"><i class="fas fa-check"></i></button>
+                            <button class="btn btn-sm btn-danger" onclick="processWithdrawal(${w.id}, 'rejected')"><i class="fas fa-times"></i></button>
+                        ` : w.status === 'approved' ? `
+                            <button class="btn btn-sm btn-primary" onclick="processWithdrawal(${w.id}, 'paid')"><i class="fas fa-money-bill"></i> 打款</button>
+                        ` : '-'}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function filterWithdrawals(status) {
+            withdrawalFilter = status;
+            document.querySelectorAll('#withdrawalsSection .tab').forEach(tab => {
+                tab.classList.toggle('active', tab.textContent.includes(
+                    status === 'pending' ? '待审核' : status === 'approved' ? '已通过' : status === 'paid' ? '已打款' : '已拒绝'
+                ));
+            });
+            loadWithdrawals();
+        }
+
+        async function processWithdrawal(id, status) {
+            const action = status === 'approved' ? '通过' : status === 'rejected' ? '拒绝' : '打款';
+            if (!confirm(`确定要${action}这笔提现申请吗？`)) return;
+
+            const res = await put(`/admin/withdrawals/${id}`, { status });
+            if (res.code === 200) {
+                showToast(`提现${action}成功`);
+                loadWithdrawals();
+                loadStats();
+            } else {
+                showToast(res.message || '操作失败', 'error');
+            }
+        }
+
+        // ========== 通用功能 ==========
+        function viewQRCode(url) {
+            document.getElementById('qrcodeImage').src = url;
+            document.getElementById('qrcodeModal').classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+    </script>
+</body>
+
+</html>

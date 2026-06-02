@@ -1,0 +1,3272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>用户中心 - 代发系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+
+<body>
+    <!-- 移动端菜单按钮 -->
+    <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+        <i class="fas fa-bars" id="mobileMenuIcon"></i>
+    </button>
+
+    <!-- 侧边栏遮罩层 -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
+
+    <div class="layout">
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">📱 用户中心</div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-item active" onclick="showSection('dashboard', this)">
+                    <i class="fas fa-home"></i>
+                    <span>首页</span>
+                </div>
+                <div class="nav-item" onclick="showSection('tasks', this)">
+                    <i class="fas fa-tasks"></i>
+                    <span>任务</span>
+                </div>
+                <div class="nav-item" onclick="showSection('submissions', this)">
+                    <i class="fas fa-link"></i>
+                    <span>链接回传</span>
+                </div>
+                <div class="nav-item" onclick="showSection('wallet', this)">
+                    <i class="fas fa-wallet"></i>
+                    <span>我的钱包</span>
+                </div>
+                <div class="nav-item" onclick="showSection('referrals', this)">
+                    <i class="fas fa-user"></i>
+                    <span>我的</span>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">U</div>
+                    <div class="user-details">
+                        <div class="user-name" id="userName">用户</div>
+                        <div class="user-role">普通用户</div>
+                    </div>
+                    <button class="btn btn-sm btn-outline" onclick="logout()" title="退出">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 首页/个人中心 -->
+            <section id="dashboardSection">
+                <div class="page-header">
+                    <h1 class="page-title">首页</h1>
+                    <p class="page-subtitle" id="welcomeMsg">欢迎回来</p>
+                </div>
+
+                <!-- 移动端推广卡片 -->
+                <div class="promo-info-card mobile-only" id="homePromoCard">
+                    <div class="promo-info-header">
+                        <div class="promo-info-title">
+                            <i class="fas fa-bullhorn"></i>
+                            <span>我的推广</span>
+                        </div>
+                        <span style="font-size: 0.75rem; color: #15803d;" id="homeInviteCount">0人</span>
+                    </div>
+                    <div class="promo-code-display">
+                        <span class="promo-code-text" id="homePromoLink">加载中...</span>
+                        <button class="promo-copy-btn" onclick="copyHomePromoLink()">
+                            <i class="fas fa-copy"></i>
+                            复制
+                        </button>
+                    </div>
+                    <div class="promo-stats-row">
+                        <div class="promo-stat-item">
+                            <div class="promo-stat-value" id="homeCommission">¥0</div>
+                            <div class="promo-stat-label">累计佣金</div>
+                        </div>
+                        <div class="promo-stat-item">
+                            <div class="promo-stat-value" id="homeTodayCommission">¥0</div>
+                            <div class="promo-stat-label">今日佣金</div>
+                        </div>
+                        <div class="promo-stat-item" onclick="showSection('referrals')" style="cursor:pointer;">
+                            <div class="promo-stat-value" style="color: var(--primary-color);"><i
+                                    class="fas fa-chevron-right" style="font-size: 1rem;"></i></div>
+                            <div class="promo-stat-label">查看详情</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 统计卡片 - 可点击 -->
+                <div class="grid grid-4" id="refStatsGrid" style="gap: 1rem; margin-bottom: 1.5rem;">
+                    <div class="stat-card stat-card-clickable" onclick="showSection('submissions')"
+                        style="border-top: 4px solid #6366f1; padding: 1.25rem;">
+                        <div class="stat-value" style="font-size: 1.75rem; color: #6366f1;" id="totalSubmissions">0
+                        </div>
+                        <div class="stat-label" style="font-size: 0.8rem; margin-top: 0.5rem;">总提交</div>
+                    </div>
+                    <div class="stat-card stat-card-clickable" onclick="filterSubmissions('approved')"
+                        style="border-top: 4px solid #10b981; padding: 1.25rem;">
+                        <div class="stat-value" style="font-size: 1.75rem; color: #10b981;" id="approvedCount">0</div>
+                        <div class="stat-label" style="font-size: 0.8rem; margin-top: 0.5rem;">已通过</div>
+                    </div>
+                    <div class="stat-card stat-card-clickable" onclick="filterSubmissions('pending')"
+                        style="border-top: 4px solid #f59e0b; padding: 1.25rem;">
+                        <div class="stat-value" style="font-size: 1.75rem; color: #f59e0b;" id="pendingCount">0</div>
+                        <div class="stat-label" style="font-size: 0.8rem; margin-top: 0.5rem;">待审核</div>
+                    </div>
+                    <div class="stat-card stat-card-clickable" onclick="showSection('wallet')"
+                        style="border-top: 4px solid #8b5cf6; padding: 1.25rem;">
+                        <div class="stat-value" style="font-size: 1.75rem; color: #8b5cf6;" id="balanceValue">¥0.00
+                        </div>
+                        <div class="stat-label" style="font-size: 0.8rem; margin-top: 0.5rem;">可用余额</div>
+                    </div>
+                </div>
+
+                <!-- 最近提交 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-clock" style="color: var(--primary-color);"></i>
+                            最近提交</h3>
+                        <button class="btn btn-sm btn-outline" onclick="showSection('submissions')">查看全部</button>
+                    </div>
+                    <div id="recentSubmissions">
+                        <div class="empty-state" style="padding: 2rem;">
+                            <i class="fas fa-inbox" style="font-size: 2rem; color: var(--text-muted);"></i>
+                            <p style="color: var(--text-muted); margin-top: 0.5rem;">暂无提交</p>
+                            <button class="btn btn-primary btn-sm" onclick="showSection('tasks')"
+                                style="margin-top: 1rem;">去下单</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 任务与素材 -->
+            <section id="tasksSection" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">任务中心</h1>
+                    <p class="page-subtitle">选择任务或素材开始赚取收益</p>
+                </div>
+
+                <!-- 任务卡片区域 -->
+                <div class="card"
+                    style="margin-bottom: 1.5rem; background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%); border: 1px solid rgba(99, 102, 241, 0.1);">
+                    <div class="card-header" style="border-bottom: 1px solid rgba(99, 102, 241, 0.1);">
+                        <h3 class="card-title" style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-fire" style="color: #f59e0b;"></i>
+                            <span>可接任务</span>
+                        </h3>
+                    </div>
+                    <div class="grid grid-2" id="taskGrid" style="padding: 1rem; gap: 1rem;">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 素材库区域 -->
+                <div class="card"
+                    style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(52, 211, 153, 0.05) 100%); border: 1px solid rgba(16, 185, 129, 0.1);">
+                    <div class="card-header"
+                        style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid rgba(16, 185, 129, 0.1);">
+                        <h3 class="card-title" style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-images" style="color: #10b981;"></i>
+                            <span>素材库</span>
+                        </h3>
+                        <div style="display:flex; gap:0.5rem; align-items:center;">
+                            <select class="form-select" id="userMaterialCategory" style="width: 150px;"
+                                onchange="onUserCategoryChange()">
+                                <option value="">全部赛道</option>
+                            </select>
+                            <button class="btn btn-sm btn-outline" onclick="loadMaterials(1)"><i
+                                    class="fas fa-sync"></i></button>
+                        </div>
+                    </div>
+                    <div class="table-container desktop-only">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>编号</th>
+                                    <th>标题</th>
+                                    <th>图片</th>
+                                    <th>赛道</th>
+                                    <th>平台</th>
+                                    <th>下载次数</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="materialsList">
+                                <tr>
+                                    <td colspan="7">
+                                        <div class="loading">
+                                            <div class="spinner"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- 移动端素材卡片列表 -->
+                    <div class="mobile-card-list" id="materialsListMobile" style="display: none;">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                    <!-- 素材库分页 -->
+                    <div id="userMaterialPagination" class="pagination-container"
+                        style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-top: 1px solid rgba(16, 185, 129, 0.1);">
+                    </div>
+                </div>
+
+                <!-- Material Detail Display Area -->
+                <div id="userMaterialDetailArea" class="card desktop-only" style="display: none; margin-top: 1rem;">
+                    <div class="card-header"
+                        style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 class="card-title"><i class="fas fa-eye"></i> 素材详情</h3>
+                        <div>
+                            <button class="btn btn-sm btn-success" onclick="copyCurrentUserMaterial()">
+                                <i class="fas fa-copy"></i> 一键复制
+                            </button>
+                            <button class="btn btn-sm btn-outline" onclick="closeUserMaterialDetail()"
+                                style="margin-left: 0.5rem;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="userMaterialDetailContent" style="padding: 1rem;">
+                        <!-- Content will be loaded dynamically -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- 链接回传 -->
+            <section id="submissionsSection" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">链接回传</h1>
+                    <p class="page-subtitle">提交发布链接获取奖励</p>
+                </div>
+
+                <div class="card" style="margin-bottom: 1.5rem;">
+                    <h4 style="margin-bottom: 1rem;"><i class="fas fa-paper-plane"
+                            style="color: var(--primary-color);"></i> 提交新链接</h4>
+                    <div class="grid grid-2" style="gap: 1rem;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label">选择任务</label>
+                            <select class="form-select" id="submitTaskId">
+                                <option value="">选择要提交的任务</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label">小红书发布链接</label>
+                            <input type="url" class="form-input" id="submitLink" placeholder="粘贴您的小红书笔记链接">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" style="margin-top: 1rem;" onclick="submitTask()">
+                        <i class="fas fa-paper-plane"></i>
+                        提交链接
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">提交记录</h3>
+                        <div class="tabs" style="margin: 0; background: transparent; padding: 0;">
+                            <div class="tab active" onclick="filterSubmissions('')" style="padding: 0.5rem 1rem;">全部
+                            </div>
+                            <div class="tab" onclick="filterSubmissions('pending')" style="padding: 0.5rem 1rem;">进行中
+                            </div>
+                            <div class="tab" onclick="filterSubmissions('approved')" style="padding: 0.5rem 1rem;">已完成
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 桌面端表格 -->
+                    <div class="table-container desktop-only">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>任务</th>
+                                    <th>发布链接</th>
+                                    <th>金额</th>
+                                    <th>状态</th>
+                                    <th>提交时间</th>
+                                </tr>
+                            </thead>
+                            <tbody id="submissionsList">
+                                <tr>
+                                    <td colspan="5">
+                                        <div class="loading">
+                                            <div class="spinner"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <!-- 移动端卡片列表 -->
+                    <div class="mobile-card-list" id="submissionsListMobile" style="display: none;">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 我的钱包 -->
+            <section id="walletSection" style="display: none;">
+                <div class="page-header"
+                    style="display: flex; justify-content: flex-start; align-items: center; gap: 1rem;">
+                    <button class="btn btn-outline" onclick="showSection('referrals')"
+                        style="padding: 0.5rem 0.75rem; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <div>
+                        <h1 class="page-title">我的钱包</h1>
+                        <p class="page-subtitle">管理您的收益</p>
+                    </div>
+                </div>
+
+                <!-- 余额卡片 -->
+                <div class="stat-card"
+                    style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; text-align: center; margin-bottom: 1.5rem; padding: 2rem;">
+                    <div style="font-size: 0.875rem; opacity: 0.8; margin-bottom: 0.5rem;">可提现余额
+                    </div>
+                    <div style="font-size: 3rem; font-weight: 700;" id="walletBalance">¥0.00</div>
+                </div>
+
+                <div class="grid grid-2" style="gap: 1.5rem;">
+                    <!-- 申请提现表单 -->
+                    <div class="card">
+                        <h4 style="margin-bottom: 1.5rem;"><i class="fas fa-money-bill-wave"
+                                style="color: var(--primary-color);"></i> 申请提现</h4>
+
+                        <div class="form-group">
+                            <label class="form-label">提现金额</label>
+                            <input type="number" class="form-input" id="withdrawAmount" placeholder="最低 ¥10"
+                                oninput="calculateFee()" min="10">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">收款方式</label>
+                            <div style="display: flex; gap: 1rem;">
+                                <label
+                                    style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 0.75rem; border: 2px solid var(--primary-color); border-radius: var(--radius-md); cursor: pointer; background: var(--bg-tertiary);">
+                                    <input type="radio" name="paymentMethod" value="alipay" checked
+                                        style="margin-right: 0.5rem;">
+                                    <i class="fab fa-alipay" style="color: #1677ff; margin-right: 0.5rem;"></i> 支付宝
+                                </label>
+                                <label
+                                    style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 0.75rem; border: 2px solid var(--border-color); border-radius: var(--radius-md); cursor: pointer;">
+                                    <input type="radio" name="paymentMethod" value="wechat"
+                                        style="margin-right: 0.5rem;">
+                                    <i class="fab fa-weixin" style="color: #07c160; margin-right: 0.5rem;"></i> 微信
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">收款账号</label>
+                            <input type="text" class="form-input" id="paymentAccount" placeholder="请输入收款账号">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">收款码 * <span
+                                    style="color: var(--danger-color); font-size: 0.75rem;">(必填)</span></label>
+                            <div id="qrcodeUploadArea"
+                                style="border: 2px dashed var(--border-color); border-radius: var(--radius-md); padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.3s;"
+                                onclick="document.getElementById('qrcodeFile').click()">
+                                <div id="qrcodePreview" style="display: none;">
+                                    <img id="qrcodePreviewImg"
+                                        style="max-width: 100px; max-height: 100px; border-radius: var(--radius-md);">
+                                </div>
+                                <div id="qrcodeUploadText">
+                                    <i class="fas fa-plus"
+                                        style="font-size: 1.5rem; color: var(--text-muted); margin-bottom: 0.5rem;"></i>
+                                    <div style="color: var(--primary-color); font-size: 0.875rem;">
+                                        上传收款码</div>
+                                </div>
+                                <input type="file" id="qrcodeFile" accept="image/*" style="display: none;"
+                                    onchange="previewQRCode(this)">
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">
+                                支持jpg/png/gif，最大2MB</div>
+                        </div>
+
+                        <div
+                            style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span style="color: var(--text-secondary);">手续费</span>
+                                <span id="withdrawFee">¥0.00</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between;">
+                                <span style="font-weight: 600;">实际到账</span>
+                                <span style="font-weight: 700; color: var(--primary-color); font-size: 1.25rem;"
+                                    id="actualAmount">¥0.00</span>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary btn-block" onclick="requestWithdraw()"
+                            style="padding: 1rem; font-size: 1rem;">
+                            <i class="fas fa-paper-plane"></i> 提交申请
+                        </button>
+                    </div>
+
+                    <!-- 提现说明 -->
+                    <div class="card" style="border-left: 4px solid var(--warning-color);">
+                        <h4 style="margin-bottom: 1.5rem;"><i class="fas fa-info-circle"
+                                style="color: var(--warning-color);"></i> 提现说明</h4>
+
+                        <div style="margin-bottom: 1rem;">
+                            <div
+                                style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid var(--border-color);">
+                                <span>最低提现金额：</span>
+                                <span style="font-weight: 600; color: var(--primary-color);"
+                                    id="configMinWithdraw">¥10</span>
+                            </div>
+                            <div
+                                style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid var(--border-color);">
+                                <span>单笔最高提现：</span>
+                                <span style="font-weight: 600; color: var(--primary-color);"
+                                    id="configMaxWithdraw">¥5000</span>
+                            </div>
+                            <div
+                                style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid var(--border-color);">
+                                <span>处理时间：</span>
+                                <span style="font-weight: 600;" id="configProcessDays">1-3个工作日</span>
+                            </div>
+                        </div>
+
+                        <div style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1rem;">
+                            请确保收款账号信息正确
+                        </div>
+
+                        <div
+                            style="background: #fef3c7; padding: 1rem; border-radius: var(--radius-md); display: flex; align-items: flex-start; gap: 0.75rem;">
+                            <i class="fas fa-lightbulb" style="color: #f59e0b; margin-top: 2px;"></i>
+                            <span style="color: #92400e; font-size: 0.875rem;">如有问题请联系客服处理</span>
+                        </div>
+
+                        <div
+                            style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+                            <div style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                                当前可提现
+                            </div>
+                            <div style="font-size: 1.75rem; font-weight: 700; color: var(--primary-color);"
+                                id="availableBalance">¥0.00</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 提现记录 -->
+                <div class="card" style="margin-top: 1.5rem;">
+                    <div class="card-header">
+                        <h3 class="card-title"><i class="fas fa-history" style="color: var(--info-color);"></i> 提现记录
+                        </h3>
+                    </div>
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>金额</th>
+                                    <th>收款方式</th>
+                                    <th>状态</th>
+                                    <th>申请时间</th>
+                                </tr>
+                            </thead>
+                            <tbody id="withdrawalList">
+                                <tr>
+                                    <td colspan="4">
+                                        <div class="empty-state"><i class="fas fa-history"></i>
+                                            <h3>暂无提现记录</h3>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 我的 -->
+            <section id="referralsSection" style="display: none;">
+                <!-- 移动端微信风格布局 -->
+                <div class="mobile-profile-page mobile-only">
+                    <!-- 用户信息头部 -->
+                    <div class="wechat-profile-header">
+                        <div class="wechat-avatar">
+                            <img id="mobileProfileAvatar"
+                                src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%23e5e7eb'/%3E%3Ctext x='50' y='55' text-anchor='middle' fill='%239ca3af' font-size='40'%3E👤%3C/text%3E%3C/svg%3E"
+                                alt="头像">
+                        </div>
+                        <div class="wechat-user-info">
+                            <div class="wechat-username" id="mobileProfileName">用户</div>
+                            <div class="wechat-user-id">邀请码：<span id="mobileInviteCode">--</span></div>
+                        </div>
+                        <div class="wechat-qr-icon" onclick="showInviteQRCode()">
+                            <i class="fas fa-qrcode"></i>
+                        </div>
+                    </div>
+
+                    <!-- 余额卡片 -->
+                    <div class="wechat-balance-card" onclick="showSection('wallet')">
+                        <div class="balance-left">
+                            <div class="balance-label">可提现余额</div>
+                            <div class="balance-amount" id="mobileBalance">¥0.00</div>
+                        </div>
+                        <div class="balance-right">
+                            <span class="balance-action">提现</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+
+                    <!-- 功能列表 -->
+                    <div class="wechat-menu-group">
+                        <div class="wechat-menu-item" onclick="showSection('wallet')">
+                            <div class="menu-icon"
+                                style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                                <i class="fas fa-wallet"></i>
+                            </div>
+                            <div class="menu-text">我的钱包</div>
+                            <i class="fas fa-chevron-right menu-arrow"></i>
+                        </div>
+                        <div class="wechat-menu-item" onclick="handleMobileMenuClick('promo')">
+                            <div class="menu-icon"
+                                style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
+                                <i class="fas fa-link"></i>
+                            </div>
+                            <div class="menu-text">用户推广</div>
+                            <i class="fas fa-chevron-right menu-arrow"></i>
+                        </div>
+                        <div class="wechat-menu-item" onclick="handleMobileMenuClick('poster')">
+                            <div class="menu-icon"
+                                style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                                <i class="fas fa-image"></i>
+                            </div>
+                            <div class="menu-text">推广海报</div>
+                            <i class="fas fa-chevron-right menu-arrow"></i>
+                        </div>
+                        <div class="wechat-menu-item" onclick="handleMobileMenuClick('team')">
+                            <div class="menu-icon"
+                                style="background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="menu-text">我的邀请</div>
+                            <span class="menu-badge" id="mobileInviteCount">0</span>
+                            <i class="fas fa-chevron-right menu-arrow"></i>
+                        </div>
+                    </div>
+
+                    <div class="wechat-menu-group">
+                        <div class="wechat-menu-item" onclick="handleMobileMenuClick('settings')">
+                            <div class="menu-icon"
+                                style="background: linear-gradient(135deg, #64748b 0%, #475569 100%);">
+                                <i class="fas fa-cog"></i>
+                            </div>
+                            <div class="menu-text">设置</div>
+                            <i class="fas fa-chevron-right menu-arrow"></i>
+                        </div>
+                    </div>
+
+                    <div class="wechat-menu-group">
+                        <div class="wechat-menu-item logout-item" onclick="confirmLogout()">
+                            <div class="menu-icon"
+                                style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+                                <i class="fas fa-sign-out-alt"></i>
+                            </div>
+                            <div class="menu-text" style="color: #ef4444;">退出登录</div>
+                            <i class="fas fa-chevron-right menu-arrow"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 桌面端原有布局 -->
+                <div class="desktop-only">
+                    <div class="page-header">
+                        <h1 class="page-title">我的</h1>
+                        <p class="page-subtitle">个人信息与推广管理</p>
+                    </div>
+                </div>
+
+                <!-- 移动端子页面容器 -->
+                <div id="mobileSubPage" class="mobile-sub-page">
+                    <div class="mobile-sub-header">
+                        <button class="back-btn" onclick="closeMobileSubPage()">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <span class="sub-page-title" id="mobileSubPageTitle">标题</span>
+                        <span style="width: 40px;"></span>
+                    </div>
+                    <div class="mobile-sub-content" id="mobileSubPageContent"></div>
+                </div>
+
+                <!-- 设置面板 (账号设置) -->
+                <div class="ref-tab-panel" data-panel="settings" style="display: none;">
+                    <div class="card" style="margin-bottom: 2rem;">
+                        <div class="card-header">
+                            <h3 class="card-title"><i class="fas fa-cog" style="color: var(--primary-color);"></i> 账号设置
+                            </h3>
+                        </div>
+                        <div style="padding: 0;">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid var(--border-color);">
+                                <div>
+                                    <div style="font-weight: 600; margin-bottom: 0.25rem;">用户名</div>
+                                    <div style="color: var(--text-secondary); font-size: 0.875rem;"
+                                        id="profileUsername">--
+                                    </div>
+                                </div>
+                                <button class="btn btn-sm btn-outline" onclick="showEditProfileModal()"><i
+                                        class="fas fa-edit"></i> 编辑</button>
+                            </div>
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid var(--border-color);">
+                                <div>
+                                    <div style="font-weight: 600; margin-bottom: 0.25rem;">推广码</div>
+                                    <div style="color: var(--primary-color); font-size: 0.875rem; font-weight: 600;"
+                                        id="profileInviteCode">--</div>
+                                </div>
+                                <button class="copy-btn btn-sm" onclick="copyInviteCodeWithFeedback(this)"><i
+                                        class="fas fa-copy"></i> 复制</button>
+                            </div>
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid var(--border-color);">
+                                <div>
+                                    <div style="font-weight: 600; margin-bottom: 0.25rem;">手机号</div>
+                                    <div style="color: var(--text-secondary); font-size: 0.875rem;" id="profilePhone">
+                                        未绑定
+                                    </div>
+                                </div>
+                                <button class="btn btn-sm btn-outline" onclick="showBindPhoneModal()"><i
+                                        class="fas fa-edit"></i> 修改</button>
+                            </div>
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 0;">
+                                <div>
+                                    <div style="font-weight: 600; margin-bottom: 0.25rem;">修改密码</div>
+                                    <div style="color: var(--text-muted); font-size: 0.75rem;">定期修改密码保障账号安全</div>
+                                </div>
+                                <button class="btn btn-sm btn-outline" onclick="showChangePasswordModal()"><i
+                                        class="fas fa-key"></i> 修改</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ref-tab-panels">
+                    <div class="ref-tab-panel active" data-panel="wallet">
+                        <!-- 移动端快速数据展示 (mobile only) -->
+                        <div class="profile-quick-actions mobile-only">
+                            <div class="profile-quick-action balance" onclick="showSection('wallet')">
+                                <div class="value" id="refBalanceMobile">¥0.00</div>
+                                <span>可提现余额</span>
+                            </div>
+                            <div class="profile-quick-action commission">
+                                <div class="value" id="commissionTotalMobile">¥0.00</div>
+                                <span>累计佣金</span>
+                            </div>
+                        </div>
+
+                        <!-- 核心数据卡片 -->
+                        <div class="grid grid-4">
+                            <div class="stat-card">
+                                <div style="font-size: 0.75rem; color: var(--primary-color); margin-bottom: 0.5rem;">
+                                    可提现余额</div>
+                                <div class="stat-value" style="font-size: 1.75rem; color: var(--primary-color);"
+                                    id="refBalance">¥0.00</div>
+                            </div>
+                            <div class="stat-card">
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                                    累计佣金</div>
+                                <div class="stat-value" style="font-size: 1.75rem;" id="commissionTotal">
+                                    ¥0.00</div>
+                            </div>
+                            <div class="stat-card">
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                                    推广人数</div>
+                                <div class="stat-value" style="font-size: 1.75rem;" id="inviteeCount">0</div>
+                            </div>
+                            <div class="stat-card">
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                                    推广成交额</div>
+                                <div class="stat-value" style="font-size: 1.75rem;" id="refTotalAmount">
+                                    ¥0.00</div>
+                            </div>
+                        </div>
+
+                        <!-- 今日数据 -->
+                        <div class="card" style="margin-bottom: 1.5rem; border-left: 4px solid var(--primary-color);">
+                            <h4 style="margin-bottom: 1rem;"><i class="fas fa-chart-line"
+                                    style="color: var(--primary-color);"></i> 今日数据</h4>
+                            <div class="grid grid-4" style="text-align: center;">
+                                <div>
+                                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary-color);"
+                                        id="todayOrders">0</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted);">今日订单</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary-color);"
+                                        id="todayAmount">¥0.00</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted);">今日成交额</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary-color);"
+                                        id="todayCommission">¥0.00</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted);">今日佣金</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary-color);"
+                                        id="todayUsers">0</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted);">今日新增用户</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="ref-tab-panel" data-panel="promo">
+                        <!-- 推广链接 -->
+                        <div class="card" id="refPromoCard" style="margin-bottom: 1.5rem;">
+                            <h4 style="margin-bottom: 0.5rem;"><i class="fas fa-link"
+                                    style="color: var(--success-color);"></i>
+                                推广链接</h4>
+                            <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1.5rem;">
+                                分享以下链接，用户注册后您将获得佣金</p>
+
+                            <div
+                                style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: var(--bg-tertiary); border-radius: var(--radius-md); margin-bottom: 1rem;">
+                                <div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">
+                                        推广码</div>
+                                    <div style="font-weight: 600;" id="inviteCode">-</div>
+                                </div>
+                                <button class="btn btn-sm btn-success" onclick="copyInviteCode()">
+                                    <i class="fas fa-copy"></i> 复制
+                                </button>
+                            </div>
+
+                            <div
+                                style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">
+                                        推广链接
+                                    </div>
+                                    <div style="font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                                        id="inviteLink">-</div>
+                                </div>
+                                <button class="btn btn-sm btn-success" onclick="copyInviteLink()"
+                                    style="margin-left: 1rem;">
+                                    <i class="fas fa-copy"></i> 复制
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ref-tab-panel" data-panel="poster">
+                        <!-- 推广海报 -->
+                        <div class="card" id="refPosterCard" style="margin-bottom: 1.5rem;">
+                            <h4 style="margin-bottom: 0.5rem;"><i class="fas fa-image"
+                                    style="color: var(--primary-color);"></i>
+                                推广海报</h4>
+                            <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1rem;">
+                                保存海报分享给好友，吸引新用户注册</p>
+
+                            <!-- 海报轮播容器 -->
+                            <div id="posterCarousel"
+                                style="position: relative; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border-radius: var(--radius-xl); padding: 1.5rem; box-shadow: inset 0 2px 10px rgba(0,0,0,0.05);">
+                                <!-- 海报显示区域 -->
+                                <div style="text-align: center; position: relative;">
+                                    <img id="currentPosterImg" src="/assets/assets/img/promo_poster.jpg" alt="推广海报"
+                                        style="width: 100%; max-width: 320px; display: block; margin: 0 auto; border-radius: var(--radius-lg); box-shadow: 0 10px 40px rgba(0,0,0,0.15); transition: all 0.3s ease;">
+
+                                    <!-- 切换按钮 -->
+                                    <button onclick="prevPoster()" id="posterPrevBtn"
+                                        style="position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; border-radius: 50%; border: none; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.15); cursor: pointer; display: none; align-items: center; justify-content: center; transition: all 0.2s;">
+                                        <i class="fas fa-chevron-left" style="color: var(--text-primary);"></i>
+                                    </button>
+                                    <button onclick="nextPoster()" id="posterNextBtn"
+                                        style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; border-radius: 50%; border: none; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.15); cursor: pointer; display: none; align-items: center; justify-content: center; transition: all 0.2s;">
+                                        <i class="fas fa-chevron-right" style="color: var(--text-primary);"></i>
+                                    </button>
+                                </div>
+
+                                <!-- 海报指示器 -->
+                                <div id="posterIndicators"
+                                    style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 1rem;">
+                                </div>
+
+                                <!-- 海报计数 -->
+                                <div id="posterCounter"
+                                    style="text-align: center; margin-top: 0.75rem; font-size: 0.875rem; color: var(--text-secondary);">
+                                </div>
+                            </div>
+
+                            <!-- 操作按钮 -->
+                            <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 1.25rem;">
+                                <button class="btn btn-primary" onclick="downloadCurrentPoster()"
+                                    style="padding: 0.75rem 1.5rem;">
+                                    <i class="fas fa-download"></i> 下载当前海报
+                                </button>
+                                <button class="btn btn-outline" onclick="downloadAllPosters()" id="downloadAllBtn"
+                                    style="padding: 0.75rem 1.5rem; display: none;">
+                                    <i class="fas fa-cloud-download-alt"></i> 下载全部
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ref-tab-panel" data-panel="team">
+                        <!-- 我的团队 -->
+                        <div class="card" id="refTeamCard">
+                            <div class="card-header">
+                                <h3 class="card-title"><i class="fas fa-users" style="color: var(--info-color);"></i>
+                                    我的团队</h3>
+                            </div>
+                            <div class="table-container">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>用户</th>
+                                            <th>注册时间</th>
+                                            <th>贡献佣金</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="teamList">
+                                        <tr>
+                                            <td colspan="3">
+                                                <div class="empty-state"><i class="fas fa-users"></i>
+                                                    <h3>暂无团队成员</h3>
+                                                    <p>分享推广链接邀请好友加入</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 素材内容模态框 -->
+    <div id="materialModal" class="material-modal" style="display: none;">
+        <div class="material-modal-overlay" onclick="closeMaterialModal()"></div>
+        <div class="material-modal-content">
+            <div class="material-modal-header">
+                <div class="material-modal-title">
+                    <i class="fas fa-file-alt" style="color: var(--primary-color);"></i>
+                    <span>素材内容</span>
+                </div>
+                <button class="material-modal-close" onclick="closeMaterialModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="material-modal-body">
+                <!-- 素材图片展示 -->
+                <div id="materialImagesArea" style="display: none; margin-bottom: 1.5rem;">
+                    <div class="material-section-title">
+                        <i class="fas fa-images" style="color: var(--primary-color);"></i> 素材图片
+                    </div>
+                    <div id="materialImages" class="material-images-grid"></div>
+                </div>
+
+                <!-- 素材视频展示 -->
+                <div id="materialVideosArea" style="display: none; margin-bottom: 1.5rem;">
+                    <div class="material-section-title">
+                        <i class="fas fa-video" style="color: var(--success-color);"></i> 素材视频
+                    </div>
+                    <div id="materialVideos" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    </div>
+                </div>
+
+                <!-- 标题 -->
+                <div class="material-field">
+                    <div class="material-field-header">
+                        <div class="material-field-label">标题</div>
+                        <button class="btn btn-sm btn-success" onclick="copyMaterialContent('materialTitle')">
+                            <i class="fas fa-copy"></i> 复制
+                        </button>
+                    </div>
+                    <div id="materialTitle" class="material-field-content material-title-content"></div>
+                </div>
+
+                <!-- 正文 -->
+                <div class="material-field">
+                    <div class="material-field-header">
+                        <div class="material-field-label">正文</div>
+                        <button class="btn btn-sm btn-success" onclick="copyMaterialContent('materialContent')">
+                            <i class="fas fa-copy"></i> 复制
+                        </button>
+                    </div>
+                    <div id="materialContent" class="material-field-content material-content-scroll"></div>
+                </div>
+
+                <!-- 话题 -->
+                <div class="material-field">
+                    <div class="material-field-header">
+                        <div class="material-field-label">话题</div>
+                        <button class="btn btn-sm btn-success" onclick="copyMaterialContent('materialTopics')">
+                            <i class="fas fa-copy"></i> 复制
+                        </button>
+                    </div>
+                    <div id="materialTopics" class="material-field-content"></div>
+                </div>
+            </div>
+            <div class="material-modal-footer">
+                <button class="btn btn-outline" onclick="copyAllMaterial()" style="flex: 1;">
+                    <i class="fas fa-copy"></i> 复制全部
+                </button>
+                <button class="btn btn-primary" onclick="goToPublish()" style="flex: 1;">
+                    <i class="fas fa-magic"></i> 一键填充
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 素材详情模态框 -->
+    <div class="modal-overlay" id="materialDetailModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">素材详情</h3>
+                <button class="modal-close" onclick="closeModal('materialDetailModal')"><i
+                        class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" id="materialDetailContent"></div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('materialDetailModal')">关闭</button>
+                <button class="btn btn-success" onclick="copyCurrentMaterial()">
+                    <i class="fas fa-copy"></i> 一键复制
+                </button>
+                <button class="btn btn-primary" onclick="window.open('https://creator.xiaohongshu.com/', '_blank')">
+                    <i class="fas fa-external-link-alt"></i> 去发布
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 移动端底部导航 -->
+    <nav class="mobile-bottom-nav">
+        <div class="mobile-bottom-nav-items">
+            <div class="mobile-bottom-nav-item active" onclick="switchMobileNav('dashboard', this)">
+                <i class="fas fa-home"></i>
+                <span>首页</span>
+            </div>
+            <div class="mobile-bottom-nav-item" onclick="switchMobileNav('tasks', this)">
+                <i class="fas fa-tasks"></i>
+                <span>任务</span>
+            </div>
+            <div class="mobile-bottom-nav-item" onclick="switchMobileNav('submissions', this)">
+                <i class="fas fa-link"></i>
+                <span>回传</span>
+            </div>
+            <div class="mobile-bottom-nav-item" onclick="switchMobileNav('referrals', this)">
+                <i class="fas fa-user"></i>
+                <span>我的</span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="toast-container"></div>
+
+
+    <script src="/assets/js/api.js"></script>
+    <script>
+        if (!checkRole(['user'])) { }
+
+        let tasks = [];
+        let submissionFilter = '';
+        let currentUserData = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = getUser();
+            if (user) {
+                document.getElementById('userName').textContent = user.nickname || user.username;
+                document.getElementById('welcomeName').textContent = user.nickname || user.username;
+                document.getElementById('userAvatar').textContent = (user.nickname || user.username).charAt(0).toUpperCase();
+            }
+            loadDashboard();
+
+            // 初始化移动端视图
+            updateMobileViews();
+        });
+
+        // 监听窗口大小变化
+        window.addEventListener('resize', debounce(updateMobileViews, 250));
+
+        // 更新移动端视图显示
+        function updateMobileViews() {
+            const isMobile = window.innerWidth <= 768;
+
+            // 发布码列表
+            const publishCodeMobile = document.getElementById('publishCodeListMobile');
+            if (publishCodeMobile) {
+                publishCodeMobile.style.display = isMobile ? 'flex' : 'none';
+            }
+
+            // 素材列表
+            const materialsMobile = document.getElementById('materialsListMobile');
+            if (materialsMobile) {
+                materialsMobile.style.display = isMobile ? 'flex' : 'none';
+            }
+
+            // 提交记录列表
+            const submissionsMobile = document.getElementById('submissionsListMobile');
+            if (submissionsMobile) {
+                submissionsMobile.style.display = isMobile ? 'flex' : 'none';
+            }
+        }
+
+        // 防抖函数
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // 移动端菜单切换
+        function toggleMobileMenu() {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const icon = document.getElementById('mobileMenuIcon');
+
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+
+            if (sidebar.classList.contains('open')) {
+                icon.classList.remove('fa-bars');
+                icon.classList.add('fa-times');
+            } else {
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
+            }
+        }
+
+        function showSection(section, element) {
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            if (element) element.classList.add('active');
+
+            document.querySelectorAll('main > section').forEach(s => s.style.display = 'none');
+            document.getElementById(section + 'Section').style.display = 'block';
+
+            // 移动端自动关闭菜单
+            if (window.innerWidth <= 768) {
+                const sidebar = document.querySelector('.sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                const icon = document.getElementById('mobileMenuIcon');
+                if (sidebar) sidebar.classList.remove('open');
+                if (overlay) overlay.classList.remove('active');
+                if (icon) {
+                    icon.classList.remove('fa-times');
+                    icon.classList.add('fa-bars');
+                }
+            }
+
+            // 同步移动端底部导航状态
+            syncMobileNavState(section);
+
+            switch (section) {
+                case 'dashboard': loadDashboard(); break;
+                case 'tasks': loadTasks(); loadUserCategories(); loadMaterials(); break;
+                case 'submissions': loadSubmissions(); loadTasksForSelect(); break;
+                case 'wallet': loadWallet(); break;
+                case 'referrals': loadReferrals(); setReferralTab(currentReferralTab); break;
+            }
+
+            // 移动端布局稳定性修复 - 确保切换页面后重新计算布局
+            if (window.innerWidth <= 768) {
+                setTimeout(() => {
+                    // 强制重新计算布局
+                    window.dispatchEvent(new Event('resize'));
+                    // 确保素材列表在任务页面正确显示
+                    if (section === 'tasks') {
+                        const materialsMobile = document.getElementById('materialsListMobile');
+                        if (materialsMobile) materialsMobile.style.display = 'flex';
+                    }
+                }, 100);
+            }
+        }
+
+        // 移动端底部导航切换
+        function switchMobileNav(section, element) {
+            // 更新底部导航选中状态
+            document.querySelectorAll('.mobile-bottom-nav-item').forEach(item => item.classList.remove('active'));
+            if (element) element.classList.add('active');
+
+            // 调用原有的showSection
+            showSection(section, null);
+
+            // 同步侧边栏状态（如果存在）
+            const navItems = document.querySelectorAll('.nav-item');
+            const sectionIndex = {
+                'dashboard': 0,
+                'tasks': 1,
+                'submissions': 2,
+                'wallet': 3,
+                'referrals': 4
+            };
+            navItems.forEach((item, i) => {
+                item.classList.toggle('active', i === sectionIndex[section]);
+            });
+        }
+
+        // 同步移动端底部导航状态
+        function syncMobileNavState(section) {
+            const sectionToNavIndex = {
+                'dashboard': 0,
+                'tasks': 1,
+                'submissions': 2,
+                'wallet': 3,
+                'referrals': 3 // 我的页面在referrals
+            };
+            const navItems = document.querySelectorAll('.mobile-bottom-nav-item');
+            navItems.forEach((item, i) => {
+                item.classList.toggle('active', i === sectionToNavIndex[section]);
+            });
+        }
+
+        // 移动端"我的"页面快捷标签
+        let currentReferralTab = 'wallet';
+
+        function setReferralTab(target) {
+            const next = target || 'wallet';
+            currentReferralTab = next;
+
+            const tabs = document.querySelectorAll('.profile-tab');
+            tabs.forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.target === next);
+            });
+
+            const panels = document.querySelectorAll('.ref-tab-panel');
+            panels.forEach(panel => {
+                panel.classList.toggle('active', panel.dataset.panel === next);
+            });
+        }
+
+        function handleReferralTabClick(target, element) {
+            setReferralTab(target);
+        }
+
+
+        async function loadDashboard() {
+            // 加载用户信息
+            const profileRes = await userAPI.getProfile();
+            if (profileRes.code === 200) {
+                const user = profileRes.data.user;
+                const stats = profileRes.data.stats;
+                currentUserData = user; // 保存用户数据
+
+                // 填充欢迎信息
+                document.getElementById('welcomeMsg').textContent = `欢迎回来，${user.nickname || user.username}`;
+
+                // 填充账号信息 (首页已移除，保留兼容性)
+                const accountUsernameEl = document.getElementById('accountUsername');
+                const accountInviteCodeEl = document.getElementById('accountInviteCode');
+                const accountPhoneEl = document.getElementById('accountPhone');
+                if (accountUsernameEl) accountUsernameEl.textContent = user.nickname || user.username;
+                if (accountInviteCodeEl) accountInviteCodeEl.textContent = user.username;
+                if (accountPhoneEl) accountPhoneEl.textContent = user.phone || '未绑定';
+
+                // 填充"我的"页面账号信息
+                const profileUsernameEl = document.getElementById('profileUsername');
+                const profileInviteCodeEl = document.getElementById('profileInviteCode');
+                const profilePhoneEl = document.getElementById('profilePhone');
+                if (profileUsernameEl) profileUsernameEl.textContent = user.nickname || user.username;
+                if (profileInviteCodeEl) profileInviteCodeEl.textContent = user.username;
+                if (profilePhoneEl) profilePhoneEl.textContent = user.phone || '未绑定';
+
+                // 更新侧边栏头像
+                const avatarEl = document.getElementById('userAvatar');
+                if (user.avatar) {
+                    avatarEl.innerHTML = `<img src="${user.avatar}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                } else {
+                    avatarEl.textContent = (user.nickname || user.username || 'U').charAt(0).toUpperCase();
+                }
+                document.getElementById('userName').textContent = user.nickname || user.username;
+
+                // 填充统计数据 - 使用正确的API字段
+                document.getElementById('balanceValue').textContent = '¥' + Number(user.balance || 0).toFixed(2);
+                document.getElementById('totalSubmissions').textContent = stats?.submission_count || 0;
+                document.getElementById('approvedCount').textContent = stats?.approved_count || 0;
+                document.getElementById('pendingCount').textContent = (stats?.submission_count || 0) - (stats?.approved_count || 0);
+
+                // 填充移动端推广卡片数据
+                const promoLink = window.location.origin + '/?ref=' + user.username;
+                const homePromoLinkEl = document.getElementById('homePromoLink');
+                if (homePromoLinkEl) {
+                    homePromoLinkEl.textContent = promoLink;
+                }
+            }
+
+            // 加载推广统计数据（用于移动端首页卡片）
+            try {
+                const refRes = await userAPI.getReferralStats();
+                if (refRes.code === 200) {
+                    const homeInviteCount = document.getElementById('homeInviteCount');
+                    const homeCommission = document.getElementById('homeCommission');
+                    const homeTodayCommission = document.getElementById('homeTodayCommission');
+
+                    if (homeInviteCount) homeInviteCount.textContent = (refRes.data.invitee_count || 0) + '人';
+                    if (homeCommission) homeCommission.textContent = '¥' + Number(refRes.data.total_commission || 0).toFixed(0);
+                    if (homeTodayCommission) homeTodayCommission.textContent = '¥' + Number(refRes.data.today_commission || 0).toFixed(0);
+                }
+            } catch (e) {
+                console.log('加载推广数据失败', e);
+            }
+
+            // 加载首页数据
+            try {
+                const res = await userAPI.getHome();
+                if (res && res.code === 200) {
+                    renderLatestTasks(res.data.latest_tasks || []);
+                } else {
+                    renderLatestTasks([]);
+                }
+            } catch (error) {
+                console.error('加载热门任务失败:', error);
+                renderLatestTasks([]);
+            }
+
+            // 加载最近提交
+            loadRecentSubmissions();
+        }
+
+        async function loadRecentSubmissions() {
+            const res = await userAPI.listSubmissions({});
+            const container = document.getElementById('recentSubmissions');
+
+            if (res.code === 200 && res.data && res.data.list && res.data.list.length > 0) {
+                const recentList = res.data.list.slice(0, 5);
+                container.innerHTML = recentList.map(s => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border-color);">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500; margin-bottom: 0.25rem;">${s.task?.project_name || '任务#' + s.task_id}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">${formatDate(s.created_at)}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            ${getStatusBadge(s.status)}
+                            <div style="font-size: 0.875rem; font-weight: 600; color: var(--success-color); margin-top: 0.25rem;">+${formatMoney(s.earned_amount || s.task?.unit_price || 0)}</div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = `
+                    <div class="empty-state" style="padding: 2rem;">
+                        <i class="fas fa-inbox" style="font-size: 2rem; color: var(--text-muted);"></i>
+                        <p style="color: var(--text-muted); margin-top: 0.5rem;">暂无提交</p>
+                        <button class="btn btn-primary btn-sm" onclick="showSection('tasks')" style="margin-top: 1rem;">去下单</button>
+                    </div>
+                `;
+            }
+        }
+
+        function filterSubmissions(status) {
+            showSection('submissions');
+            // 延迟设置筛选，确保页面切换完成
+            setTimeout(() => {
+                submissionFilter = status;
+                loadSubmissions();
+            }, 100);
+        }
+
+        function copyInviteCode() {
+            const code = document.getElementById('accountInviteCode')?.textContent ||
+                document.getElementById('profileInviteCode')?.textContent ||
+                currentUserData?.username;
+            const inviteLink = window.location.origin + '/?ref=' + code;
+            navigator.clipboard.writeText(inviteLink).then(() => {
+                showToast('推广链接已复制：' + inviteLink);
+            }).catch(() => {
+                showToast('复制失败，请手动复制');
+            });
+        }
+
+        // 带动画反馈的复制函数
+        function copyInviteCodeWithFeedback(btn) {
+            const code = document.getElementById('profileInviteCode')?.textContent ||
+                currentUserData?.username;
+            const inviteLink = window.location.origin + '/?ref=' + code;
+
+            navigator.clipboard.writeText(inviteLink).then(() => {
+                const originalHtml = btn.innerHTML;
+                btn.classList.add('copied');
+                btn.innerHTML = '<i class="fas fa-check"></i> 已复制';
+
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    btn.innerHTML = originalHtml;
+                }, 2000);
+
+                showToast('推广链接已复制');
+            }).catch(() => {
+                showToast('复制失败', 'error');
+            });
+        }
+
+        // 移动端首页推广链接复制
+        function copyHomePromoLink() {
+            const promoLinkEl = document.getElementById('homePromoLink');
+            const promoLink = promoLinkEl ? promoLinkEl.textContent : '';
+            if (!promoLink || promoLink === '加载中...') {
+                // 如果还没加载，使用默认方式生成
+                const code = currentUserData?.username || '';
+                if (!code) {
+                    showToast('请先登录', 'error');
+                    return;
+                }
+                const link = window.location.origin + '/?ref=' + code;
+                navigator.clipboard.writeText(link).then(() => {
+                    showToast('推广链接已复制');
+                }).catch(() => {
+                    showToast('复制失败');
+                });
+            } else {
+                navigator.clipboard.writeText(promoLink).then(() => {
+                    showToast('推广链接已复制');
+                }).catch(() => {
+                    showToast('复制失败');
+                });
+            }
+        }
+
+        function showBindPhoneModal() {
+            const currentPhone = currentUserData?.phone || '';
+            document.getElementById('editPhone').value = currentPhone;
+            document.getElementById('bindPhoneModal').classList.add('active');
+        }
+
+        function showChangePasswordModal() {
+            document.getElementById('oldPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            document.getElementById('changePasswordModal').classList.add('active');
+        }
+
+        async function handleChangePassword(e) {
+            e.preventDefault();
+            const oldPassword = document.getElementById('oldPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (!oldPassword || !newPassword) {
+                showToast('请填写完整信息', 'error');
+                return;
+            }
+            if (newPassword.length < 6) {
+                showToast('新密码至少6位', 'error');
+                return;
+            }
+            if (newPassword !== confirmPassword) {
+                showToast('两次密码输入不一致', 'error');
+                return;
+            }
+
+            const res = await userAPI.changePassword(oldPassword, newPassword);
+            if (res.code === 200) {
+                showToast('密码修改成功');
+                closeModal('changePasswordModal');
+            } else {
+                showToast(res.message || '修改失败', 'error');
+            }
+        }
+
+        async function handleUpdatePhone(e) {
+            e.preventDefault();
+            const phone = document.getElementById('editPhone').value.trim();
+            if (!phone) {
+                showToast('请输入手机号', 'error');
+                return;
+            }
+
+            const res = await userAPI.updateProfile({ phone: phone });
+            if (res.code === 200) {
+                showToast('手机号修改成功');
+                closeModal('bindPhoneModal');
+                loadDashboard();
+            } else {
+                showToast(res.message || '修改失败', 'error');
+            }
+        }
+
+        // ============= 移动端微信风格个人中心 =============
+
+        // 处理移动端菜单点击
+        function handleMobileMenuClick(target) {
+            const titleMap = {
+                'promo': '用户推广',
+                'poster': '推广海报',
+                'team': '我的邀请',
+                'settings': '设置'
+            };
+
+            // 如果点击的是"我的邀请"，隐藏徽章
+            if (target === 'team') {
+                const badge = document.getElementById('mobileInviteCount');
+                if (badge) {
+                    badge.style.display = 'none';
+                    // 保存已读状态到本地存储
+                    localStorage.setItem('teamBadgeViewed', Date.now().toString());
+                }
+            }
+
+            // 隐藏主页面，显示子页面
+            document.querySelector('.mobile-profile-page').style.display = 'none';
+            const subPage = document.getElementById('mobileSubPage');
+            subPage.classList.add('active');
+            document.getElementById('mobileSubPageTitle').textContent = titleMap[target] || '详情';
+
+            // 获取对应面板内容
+            const panel = document.querySelector(`.ref-tab-panel[data-panel="${target}"]`);
+            const content = document.getElementById('mobileSubPageContent');
+
+            if (target === 'settings') {
+                // 设置页面特殊处理 - 直接获取设置面板内容
+                const settingsPanel = document.querySelector('.ref-tab-panel[data-panel="settings"]');
+                if (settingsPanel) {
+                    content.innerHTML = settingsPanel.innerHTML;
+                } else {
+                    // 如果没有设置面板，显示内联设置内容
+                    content.innerHTML = `
+                        <div class="card" style="margin: 1rem;">
+                            <div class="card-header">
+                                <h3 class="card-title"><i class="fas fa-cog" style="color: var(--primary-color);"></i> 账号设置</h3>
+                            </div>
+                            <div style="padding: 0;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid var(--border-color);">
+                                    <div>
+                                        <div style="font-weight: 600; margin-bottom: 0.25rem;">用户名</div>
+                                        <div style="color: var(--text-secondary); font-size: 0.875rem;" id="mobileSettingsUsername">--</div>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline" onclick="showEditProfileModal()"><i class="fas fa-edit"></i> 编辑</button>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid var(--border-color);">
+                                    <div>
+                                        <div style="font-weight: 600; margin-bottom: 0.25rem;">推广码</div>
+                                        <div style="color: var(--primary-color); font-size: 0.875rem; font-weight: 600;" id="mobileSettingsInviteCode">--</div>
+                                    </div>
+                                    <button class="copy-btn btn-sm" onclick="copyInviteCodeWithFeedback(this)"><i class="fas fa-copy"></i> 复制</button>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid var(--border-color);">
+                                    <div>
+                                        <div style="font-weight: 600; margin-bottom: 0.25rem;">手机号</div>
+                                        <div style="color: var(--text-secondary); font-size: 0.875rem;" id="mobileSettingsPhone">未绑定</div>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline" onclick="showBindPhoneModal()"><i class="fas fa-edit"></i> 修改</button>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem;">
+                                    <div>
+                                        <div style="font-weight: 600; margin-bottom: 0.25rem;">修改密码</div>
+                                        <div style="color: var(--text-muted); font-size: 0.75rem;">定期修改密码保障账号安全</div>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline" onclick="showChangePasswordModal()"><i class="fas fa-key"></i> 修改</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    // 填充用户数据
+                    if (currentUserData) {
+                        const usernameEl = document.getElementById('mobileSettingsUsername');
+                        const inviteCodeEl = document.getElementById('mobileSettingsInviteCode');
+                        const phoneEl = document.getElementById('mobileSettingsPhone');
+                        if (usernameEl) usernameEl.textContent = currentUserData.nickname || currentUserData.username || '--';
+                        if (inviteCodeEl) inviteCodeEl.textContent = currentUserData.username || '--';
+                        if (phoneEl) phoneEl.textContent = currentUserData.phone || '未绑定';
+                    }
+                }
+            } else if (panel) {
+                content.innerHTML = panel.innerHTML;
+            } else {
+                content.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><h3>暂无内容</h3></div>';
+            }
+        }
+
+        // 关闭移动端子页面
+        function closeMobileSubPage() {
+            document.getElementById('mobileSubPage').classList.remove('active');
+            document.querySelector('.mobile-profile-page').style.display = 'block';
+        }
+
+        // 退出登录确认
+        function confirmLogout() {
+            if (confirm('确定要退出登录吗？')) {
+                logout();
+            }
+        }
+
+        // 退出登录 - 使用api.js中的统一logout函数
+        // logout函数已在api.js中定义，无需本地重复定义
+
+        // 更新移动端个人中心信息
+        function updateMobileProfileInfo(userInfo, referralData) {
+            // 用户名
+            const nameEl = document.getElementById('mobileProfileName');
+            if (nameEl) {
+                nameEl.textContent = userInfo?.nickname || userInfo?.username || '用户';
+            }
+
+            // 邀请码
+            const codeEl = document.getElementById('mobileInviteCode');
+            if (codeEl) {
+                codeEl.textContent = referralData?.invite_code || userInfo?.username || '--';
+            }
+
+            // 余额
+            const balanceEl = document.getElementById('mobileBalance');
+            if (balanceEl) {
+                const balance = userInfo?.balance || 0;
+                balanceEl.textContent = '¥' + balance.toFixed(2);
+            }
+
+            // 邀请人数
+            const countEl = document.getElementById('mobileInviteCount');
+            if (countEl) {
+                const count = referralData?.invitee_count || 0;
+                countEl.textContent = count;
+                countEl.style.display = count > 0 ? 'inline' : 'none';
+            }
+
+            // 头像
+            const avatarEl = document.getElementById('mobileProfileAvatar');
+            if (avatarEl && userInfo?.avatar) {
+                avatarEl.src = userInfo.avatar;
+            }
+        }
+
+        // 显示邀请二维码
+        function showInviteQRCode() {
+            const inviteCode = document.getElementById('mobileInviteCode')?.textContent || '';
+            if (!inviteCode || inviteCode === '--') {
+                showToast('无法获取邀请码');
+                return;
+            }
+            const inviteUrl = window.location.origin + '/index.html?invite=' + inviteCode;
+
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay active';
+            modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+            modal.innerHTML = `
+                <div class="modal" style="max-width: 320px; background: white; border-radius: 16px; padding: 1.5rem; text-align: center;">
+                    <h3 style="margin-bottom: 1rem;">我的邀请码</h3>
+                    <div style="font-size: 1.75rem; font-weight: 700; color: var(--primary-color); margin-bottom: 1rem;">${inviteCode}</div>
+                    <div style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;">分享此邀请码给好友注册</div>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="navigator.clipboard.writeText('${inviteCode}').then(() => showToast('邀请码已复制'))">复制邀请码</button>
+                    <button class="btn btn-secondary" style="width: 100%; margin-top: 0.5rem;" onclick="this.closest('.modal-overlay').remove()">关闭</button>
+                </div>
+            `;
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+            document.body.appendChild(modal);
+        }
+
+        function renderLatestTasks(taskList) {
+            const container = document.getElementById('latestTasks');
+            if (!taskList || taskList.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-tasks"></i><h3>暂无可接任务</h3></div>';
+                return;
+            }
+
+            container.innerHTML = '<div class="grid grid-2" style="gap: 1rem;">' + taskList.slice(0, 4).map(t => `
+        <div class="task-card">
+          <div class="task-title">${t.project_name}</div>
+          <div class="task-meta">
+            <span><i class="fas fa-tag"></i> ${t.platform?.name || '小红书'}</span>
+            <span><i class="fas fa-clock"></i> ${t.validity_days}天有效</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="task-price">${formatMoney(t.unit_price)}</div>
+            <button class="btn btn-sm btn-primary" onclick="goSubmit(${t.id})">去提交</button>
+          </div>
+        </div>
+      `).join('') + '</div>';
+        }
+
+        function goSubmit(taskId) {
+            showSection('submissions');
+            setTimeout(() => { document.getElementById('submitTaskId').value = taskId; }, 100);
+        }
+
+        function goPublish(url) {
+            window.open(url, '_blank');
+        }
+
+        // 平台发布链接配置
+        const platformPublishUrls = {
+            'xiaohongshu': 'https://creator.xiaohongshu.com/',
+            'douyin': 'https://creator.douyin.com/creator-micro/content/upload',
+            'kuaishou': 'https://cp.kuaishou.com/article/publish/video',
+            'weibo': 'https://weibo.com/compose/',
+            'weixin_channels': 'https://channels.weixin.qq.com/',
+            'bilibili': 'https://member.bilibili.com/platform/upload/video/frame'
+        };
+
+        // 平台App深度链接配置
+        const platformAppLinks = {
+            'xiaohongshu': 'xhsdiscover://',
+            'douyin': 'snssdk1128://user/profile/',
+            'kuaishou': 'kwai://',
+            'weixin_channels': 'weixin://dl/channels',
+            'bilibili': 'bilibili://'
+        };
+
+        // 平台名称映射
+        const platformNames = {
+            'xiaohongshu': '小红书',
+            'douyin': '抖音',
+            'kuaishou': '快手',
+            'weibo': '微博',
+            'weixin_channels': '视频号',
+            'bilibili': 'B站'
+        };
+
+        function goPublishPlatform(platformCode) {
+            const webUrl = platformPublishUrls[platformCode] || platformPublishUrls['xiaohongshu'];
+            const appLink = platformAppLinks[platformCode];
+            const platformName = platformNames[platformCode] || '平台';
+
+            // 检测是否为移动端
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+            if (isMobile && appLink) {
+                // 移动端：先尝试打开App，失败则跳转Web
+                if (confirm('是否打开' + platformName + 'App进行发布？\n\n点击"确定"打开App，点击"取消"在浏览器中打开。')) {
+                    // 尝试打开App
+                    const startTime = Date.now();
+                    window.location.href = appLink;
+
+                    // 2秒后检测是否成功打开App，失败则跳转Web
+                    setTimeout(() => {
+                        if (Date.now() - startTime < 2500) {
+                            window.open(webUrl, '_blank');
+                        }
+                    }, 2000);
+                    return;
+                }
+            }
+
+            // 桌面端或用户选择浏览器
+            if (platformCode === 'xiaohongshu') {
+                if (!confirm('即将打开小红书创作者中心。\n\n登录后请点击左侧菜单的"发布笔记"按钮进行发布。\n\n是否继续？')) {
+                    return;
+                }
+            }
+
+            window.open(webUrl, '_blank');
+        }
+
+        // 任务发布 - 打开素材弹窗并一键复制后跳转
+        async function openTaskPublishModal(taskId) {
+            let t = (tasks || []).find(item => String(item.id) === String(taskId));
+            if (!t) {
+                const res = await userAPI.getTaskDetail(taskId);
+                if (res.code === 200 && res.data) {
+                    t = res.data;
+                } else {
+                    showToast(res.message || '获取任务详情失败', 'error');
+                    return;
+                }
+            }
+
+            const materialLike = {
+                title: t.project_name || '任务内容',
+                content: t.description || '',
+                topics: t.topics || '',
+                images: t.example_images || '',
+                videos: t.example_videos || ''
+            };
+            const platformCode = t.platform?.code || 'xiaohongshu';
+            const publishUrl = t.platform?.publish_url || platformPublishUrls[platformCode];
+            showMaterialModal(materialLike, platformCode, publishUrl);
+        }
+
+        async function loadTasks() {
+            const res = await userAPI.listTasks({});
+            const container = document.getElementById('taskGrid');
+
+            if (res.code === 200 && res.data.list && res.data.list.length > 0) {
+                tasks = res.data.list;
+                container.innerHTML = tasks.map((t, index) => {
+                    // 渐变色数组 - 为不同任务分配不同的渐变色
+                    const gradients = [
+                        'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                        'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                        'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+                        'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+                        'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)'
+                    ];
+                    const gradient = gradients[index % gradients.length];
+
+                    return `
+          <div class="task-card" style="background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); transition: all 0.3s ease; cursor: pointer;" 
+               onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 30px rgba(0,0,0,0.12)';" 
+               onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.08)';">
+            <!-- 顶部渐变条 -->
+            <div style="height: 4px; background: ${gradient};"></div>
+            <div style="padding: 1.25rem;">
+              <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
+                <div class="task-title" style="font-size: 1.125rem; font-weight: 600; color: #1a1a2e;">${t.project_name}</div>
+                <span style="padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 500; background: ${gradient}; color: white; white-space: nowrap;">${t.platform?.name || '小红书'}</span>
+              </div>
+              <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 1rem; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${t.description || '完成任务即可获得奖励'}</p>
+              <div style="display: flex; gap: 1rem; margin-bottom: 1rem; font-size: 0.8rem; color: #9ca3af;">
+                <span><i class="fas fa-clock"></i> ${t.validity_days}天有效</span>
+                <span><i class="fas fa-check-circle" style="color: #10b981;"></i> 已完成 ${t.completed_count}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; padding-top: 1rem; border-top: 1px solid #f3f4f6; flex-wrap: wrap; gap: 0.75rem;">
+                <div style="min-width: 80px;">
+                  <div style="font-size: 1.5rem; font-weight: 700; background: ${gradient}; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">${formatMoney(t.unit_price)}</div>
+                  ${t.team_leader_price > 0 ? `<div style="font-size: 0.7rem; color: #f59e0b;">团长 +${formatMoney(t.team_leader_price)}</div>` : ''}
+                </div>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end; flex: 1; min-width: 0;">
+                  <button class="btn" style="padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid #e5e7eb; background: white; color: #374151; font-size: 0.75rem; cursor: pointer; transition: all 0.2s; white-space: nowrap;" 
+                          onclick="event.stopPropagation(); openTaskPublishModal(${t.id})"
+                          onmouseover="this.style.background='#f9fafb'" 
+                          onmouseout="this.style.background='white'">
+                    <i class="fas fa-external-link-alt"></i> 去发布
+                  </button>
+                  <button class="btn" style="padding: 0.5rem 0.75rem; border-radius: 8px; border: none; background: ${gradient}; color: white; font-size: 0.75rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4); white-space: nowrap;" 
+                          onclick="event.stopPropagation(); goSubmit(${t.id})"
+                          onmouseover="this.style.opacity='0.9'" 
+                          onmouseout="this.style.opacity='1'">
+                    <i class="fas fa-arrow-right"></i> 提交
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `}).join('');
+            } else {
+                container.innerHTML = '<div class="card" style="grid-column: span 2; text-align: center; padding: 3rem;"><div class="empty-state"><i class="fas fa-tasks" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem;"></i><h3 style="color: #6b7280; margin-bottom: 0.5rem;">暂无可接任务</h3><p style="color: #9ca3af;">请稍后再来查看</p></div></div>';
+            }
+        }
+
+        // 用户素材分页变量
+        let userMaterialCurrentPage = 1;
+        let userMaterialTotalPages = 1;
+        let userMaterialPageSize = 10;
+
+        async function loadMaterials(page = 1) {
+            try {
+                userMaterialCurrentPage = page;
+                const category = document.getElementById('userMaterialCategory')?.value || '';
+                const res = await userAPI.listMaterials({ page, page_size: userMaterialPageSize, category });
+                const tbody = document.getElementById('materialsList');
+                const mobileContainer = document.getElementById('materialsListMobile');
+
+                if (res.code === 200 && res.data.list && res.data.list.length > 0) {
+                    const list = res.data.list;
+                    const total = res.data.total || 0;
+                    userMaterialTotalPages = Math.ceil(total / userMaterialPageSize);
+
+                    tbody.innerHTML = list.map(m => {
+                        let imageCount = 0;
+                        let imagePreview = '<span style="color: var(--text-muted);">-</span>';
+                        const images = parseMediaList(m.images);
+                        if (images.length > 0) {
+                            imageCount = images.length;
+                            imagePreview = `<div style="display:flex;align-items:center;gap:4px;">
+                                <img src="${images[0]}" style="width:36px;height:36px;object-fit:cover;border-radius:4px;" onerror="this.style.display='none'">
+                                <span style="color: var(--text-muted); font-size: 0.85rem;">${imageCount}张</span>
+                            </div>`;
+                        }
+
+                        return `
+                            <tr>
+                                <td><strong>${m.material_no || m.id}</strong></td>
+                                <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${m.title}">${m.title}</td>
+                                <td>${imagePreview}</td>
+                                <td><span class="badge badge-info">${m.category || '通用'}</span></td>
+                                <td>${m.platform?.name || '小红书'}</td>
+                                <td><i class="fas fa-download"></i> ${m.download_count || 0}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline" onclick="showMaterialDetailBelow(${m.id})" title="预览"><i class="fas fa-eye"></i></button>
+                                    <button class="btn btn-sm btn-success" onclick="copyMaterialById(${m.id})" title="一键复制" style="margin-left:4px;"><i class="fas fa-copy"></i></button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+
+                    if (mobileContainer) {
+                        mobileContainer.innerHTML = list.map(m => {
+                            const images = parseMediaList(m.images);
+                            const imageCount = images.length;
+                            return `
+                                <div class="mobile-material-card">
+                                    <div class="mobile-material-header">
+                                        <div class="mobile-material-title">${m.title || '未命名素材'}</div>
+                                        <span class="badge badge-info">${m.category || '通用'}</span>
+                                    </div>
+                                    <div class="mobile-material-meta">
+                                        <span><i class="fas fa-hashtag"></i> ${m.material_no || m.id}</span>
+                                        <span><i class="fas fa-images"></i> ${imageCount}张</span>
+                                        <span><i class="fas fa-download"></i> ${m.download_count || 0}</span>
+                                    </div>
+                                    <div class="mobile-material-platform">
+                                        <i class="fas fa-globe"></i> ${m.platform?.name || '小红书'}
+                                    </div>
+                                    <div class="mobile-material-actions">
+                                        <button class="btn btn-sm btn-outline" onclick="showMaterialDetailBelow(${m.id})">
+                                            <i class="fas fa-eye"></i> 预览
+                                        </button>
+                                        <button class="btn btn-sm btn-success" onclick="copyMaterialById(${m.id})">
+                                            <i class="fas fa-copy"></i> 一键复制
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+
+                    // 渲染分页控件
+                    renderUserMaterialPagination(total);
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><i class="fas fa-images"></i><h3>暂无素材</h3></div></td></tr>';
+                    if (mobileContainer) {
+                        mobileContainer.innerHTML = '<div class="empty-state"><i class="fas fa-images"></i><h3>暂无素材</h3></div>';
+                    }
+                    renderUserMaterialPagination(0);
+                }
+            } catch (error) {
+                console.error('加载素材失败:', error);
+                document.getElementById('materialsList').innerHTML = '<tr><td colspan="7"><div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h3>加载失败</h3><p>请刷新页面重试</p></div></td></tr>';
+                const mobileContainer = document.getElementById('materialsListMobile');
+                if (mobileContainer) {
+                    mobileContainer.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h3>加载失败</h3><p>请刷新页面重试</p></div>';
+                }
+            }
+        }
+
+        // 渲染用户素材分页控件
+        function renderUserMaterialPagination(total) {
+            let paginationContainer = document.getElementById('userMaterialPagination');
+            if (!paginationContainer) {
+                const tableContainer = document.querySelector('#materialsSection .table-container');
+                if (tableContainer) {
+                    const div = document.createElement('div');
+                    div.id = 'userMaterialPagination';
+                    div.className = 'pagination-container';
+                    div.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-top: 1px solid var(--border-color); margin-top: 1rem;';
+                    tableContainer.parentElement.appendChild(div);
+                    paginationContainer = div;
+                }
+            }
+
+            if (!paginationContainer) return;
+
+            if (total === 0) {
+                paginationContainer.innerHTML = '';
+                return;
+            }
+
+            paginationContainer.innerHTML = `
+                <div style="color: var(--text-muted); font-size: 0.875rem;">
+                    共 ${total} 条素材，第 ${userMaterialCurrentPage}/${userMaterialTotalPages} 页
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-sm btn-outline" onclick="loadMaterials(1)" ${userMaterialCurrentPage === 1 ? 'disabled' : ''}><i class="fas fa-angle-double-left"></i></button>
+                    <button class="btn btn-sm btn-outline" onclick="loadMaterials(${userMaterialCurrentPage - 1})" ${userMaterialCurrentPage === 1 ? 'disabled' : ''}><i class="fas fa-angle-left"></i> 上一页</button>
+                    <button class="btn btn-sm btn-outline" onclick="loadMaterials(${userMaterialCurrentPage + 1})" ${userMaterialCurrentPage >= userMaterialTotalPages ? 'disabled' : ''}>下一页 <i class="fas fa-angle-right"></i></button>
+                    <button class="btn btn-sm btn-outline" onclick="loadMaterials(${userMaterialTotalPages})" ${userMaterialCurrentPage >= userMaterialTotalPages ? 'disabled' : ''}><i class="fas fa-angle-double-right"></i></button>
+                </div>
+            `;
+        }
+
+        // 分类筛选变化时重置页码
+        function onUserCategoryChange() {
+            userMaterialCurrentPage = 1;
+            loadMaterials(1);
+        }
+
+        // 加载用户素材分类
+        async function loadUserCategories() {
+            try {
+                const res = await get('/categories');
+                if (res.code === 200 && res.data) {
+                    const select = document.getElementById('userMaterialCategory');
+                    if (select) {
+                        select.innerHTML = '<option value="">全部赛道</option>' +
+                            res.data.map(c => `<option value="${c}">${c}</option>`).join('');
+                    }
+                }
+            } catch (e) {
+                console.error('加载赛道分类失败:', e);
+            }
+        }
+
+        // 当前显示的素材数据
+        let currentUserMaterialData = null;
+
+        // 在弹窗显示素材详情（移动端/发布码预览统一）
+        async function showMaterialDetailBelow(id) {
+            const res = await userAPI.getMaterialDetail(id);
+            if (res.code === 200) {
+                const m = res.data;
+                currentUserMaterialData = m;
+                const platformCode = m.platform?.code || 'xiaohongshu';
+                const publishUrl = m.platform?.publish_url || platformPublishUrls[platformCode];
+                showMaterialModal(m, platformCode, publishUrl);
+            } else {
+                showToast('获取素材详情失败', 'error');
+            }
+        }
+
+        // 关闭素材详情区域
+        function closeUserMaterialDetail() {
+            document.getElementById('userMaterialDetailArea').style.display = 'none';
+            currentUserMaterialData = null;
+        }
+
+        // 一键复制当前显示的素材
+        function copyCurrentUserMaterial() {
+            if (!currentUserMaterialData) {
+                showToast('没有可复制的素材', 'warning');
+                return;
+            }
+            const m = currentUserMaterialData;
+            const text = `${m.title}\n\n${m.content}${m.topics ? '\n\n' + m.topics : ''}`;
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('素材已复制到剪贴板');
+            }).catch(() => {
+                showToast('复制失败，请手动复制', 'error');
+            });
+        }
+
+        // 一键复制素材内容
+        async function copyMaterialById(id) {
+            const res = await userAPI.getMaterialDetail(id);
+            if (res.code === 200) {
+                const m = res.data;
+                const text = `${m.title}\n\n${m.content}${m.topics ? '\n\n' + m.topics : ''}`;
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('内容已复制到剪贴板');
+                }).catch(() => {
+                    showToast('复制失败，请手动复制', 'error');
+                });
+            } else {
+                showToast('获取素材失败', 'error');
+            }
+        }
+
+        async function loadPublishCodes() {
+            const tbody = document.getElementById('publishCodeList');
+            const mobileContainer = document.getElementById('publishCodeListMobile');
+            if (!tbody) return;
+
+            // CSS handles mobile-only visibility now, no need to set inline style
+
+            const res = await userAPI.listPublishCodes({});
+            if (res.code === 200 && res.data && res.data.length > 0) {
+                // 桌面端表格
+                tbody.innerHTML = res.data.map(c => {
+                    const maxScans = Number(c.max_scans || 0);
+                    const scanCount = Number(c.scan_count || 0);
+                    const remaining = maxScans > 0 ? Math.max(0, maxScans - scanCount) : '-';
+                    const qrUrl = c.qrcode_url || `/api/qrcode/${c.code}`;
+                    return `
+                        <tr>
+                            <td>
+                                <code style="background: var(--bg-tertiary); padding: 4px 8px; border-radius: 4px;">${c.code}</code>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline" onclick="showQRCodeModal('${qrUrl}', '${c.code}')" title="查看二维码"><i class="fas fa-qrcode"></i></button>
+                            </td>
+                            <td>${c.platform?.name || '小红书'}</td>
+                            <td>${c.material?.title || '-'}</td>
+                            <td>${remaining}</td>
+                            <td>${formatDate(c.expire_time)}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="openPublishCodeModal('${c.code}')"><i class="fas fa-rocket"></i> 一键发布</button>
+                                <button class="btn btn-sm btn-outline" onclick="copyPublishLink('${c.code}')" style="margin-left:4px;"><i class="fas fa-copy"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                // 移动端卡片列表
+                if (mobileContainer) {
+                    mobileContainer.innerHTML = res.data.map(c => {
+                        const maxScans = Number(c.max_scans || 0);
+                        const scanCount = Number(c.scan_count || 0);
+                        const remaining = maxScans > 0 ? Math.max(0, maxScans - scanCount) : '无限';
+                        const qrUrl = c.qrcode_url || `/api/qrcode/${c.code}`;
+                        return `
+                            <div class="mobile-publish-card">
+                                <div class="mobile-publish-header">
+                                    <span class="mobile-publish-code">${c.code}</span>
+                                    <span class="mobile-publish-platform">
+                                        <i class="fas fa-hashtag"></i> ${c.platform?.name || '小红书'}
+                                    </span>
+                                </div>
+                                <div class="mobile-publish-body">
+                                    <div class="mobile-publish-material">${c.material?.title || '未关联素材'}</div>
+                                    <div class="mobile-publish-info">
+                                        <span><i class="fas fa-redo"></i> 剩余：${remaining}</span>
+                                        <span><i class="fas fa-clock"></i> ${formatDate(c.expire_time)}</span>
+                                    </div>
+                                </div>
+                                <div class="mobile-publish-actions">
+                                    <button class="btn btn-sm btn-outline" onclick="showQRCodeModal('${qrUrl}', '${c.code}')">
+                                        <i class="fas fa-qrcode"></i> 二维码
+                                    </button>
+                                    <button class="btn btn-sm btn-publish-primary" onclick="openPublishCodeModal('${c.code}')">
+                                        <i class="fas fa-rocket"></i> 一键发布
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            } else {
+                tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><i class="fas fa-qrcode"></i><h3>暂无可用发布码</h3></div></td></tr>';
+                if (mobileContainer) {
+                    mobileContainer.innerHTML = '<div class="empty-state"><i class="fas fa-qrcode"></i><h3>暂无可用发布码</h3><p>请联系商家获取发布码</p></div>';
+                }
+            }
+        }
+
+        // 显示二维码模态框
+        function showQRCodeModal(url, code) {
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay active';
+            modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+            modal.innerHTML = `
+                <div class="modal" style="max-width: 320px; background: white; border-radius: 16px; padding: 1.5rem; text-align: center;">
+                    <h3 style="margin-bottom: 1rem;">发布码二维码</h3>
+                    <img src="${url}" style="width: 200px; height: 200px; border-radius: 8px; margin-bottom: 1rem;" onerror="this.style.display='none'">
+                    <div style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 1rem;"><code>${code}</code></div>
+                    <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">关闭</button>
+                        </div>
+                    </div>
+            `;
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+            document.body.appendChild(modal);
+        }
+
+        // 统一显示素材弹窗（发布码/任务/素材预览共用）
+        function showMaterialModal(material, platformCode, publishUrl) {
+            const m = material || {};
+            currentPublishMaterial = m;
+            document.getElementById('materialTitle').textContent = m.title || '';
+            document.getElementById('materialContent').textContent = m.content || '';
+            document.getElementById('materialTopics').textContent = m.topics || '';
+
+            currentPublishPlatformCode = platformCode || 'xiaohongshu';
+            currentPublishUrl = publishUrl || platformPublishUrls[currentPublishPlatformCode] || 'https://creator.xiaohongshu.com/';
+
+            // 解析并显示图片
+            const imagesArea = document.getElementById('materialImagesArea');
+            const imagesContainer = document.getElementById('materialImages');
+            const images = parseMediaList(m.images);
+            if (images.length > 0) {
+                imagesContainer.innerHTML = images.map((img, idx) => {
+                    const u = normalizeMediaUrl(img);
+                    const alt = buildAltMediaUrl(u);
+                    const enc = encodeURIComponent(u);
+                    return `
+                        <div class="material-image-item" onclick="viewLargeImage(decodeURIComponent('${enc}'))">
+                            <img src="${u}" data-alt-src="${alt}" onerror="handleMaterialImageError(this)">
+                            <div class="material-image-overlay">
+                                <button onclick="event.stopPropagation(); downloadFile(decodeURIComponent('${enc}'), 'image_${idx + 1}.jpg')">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                imagesArea.style.display = 'block';
+            } else {
+                imagesArea.style.display = 'none';
+            }
+
+            // 解析并显示视频
+            const videosArea = document.getElementById('materialVideosArea');
+            const videosContainer = document.getElementById('materialVideos');
+            const videos = parseMediaList(m.videos);
+            if (videos.length > 0) {
+                videosContainer.innerHTML = videos.map((video, idx) => {
+                    const u = normalizeMediaUrl(video);
+                    const enc = encodeURIComponent(u);
+                    return `
+                        <div style="background: var(--bg-secondary); border-radius: var(--radius-lg); padding: 0.75rem; border: 1px solid var(--border-color);">
+                            <video controls style="width: 100%; max-height: 200px; border-radius: var(--radius-md);">
+                                <source src="${u}" type="video/mp4">
+                            </video>
+                            <div style="text-align: right; margin-top: 0.5rem;">
+                                <button class="btn btn-sm btn-outline" onclick="downloadFile(decodeURIComponent('${enc}'), 'video_${idx + 1}.mp4')">
+                                    <i class="fas fa-download"></i> 下载视频
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                videosArea.style.display = 'block';
+            } else {
+                videosArea.style.display = 'none';
+            }
+
+            // 显示模态框
+            document.getElementById('materialModal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        // 打开发布码弹窗 - 显示素材内容
+        async function openPublishCodeModal(code) {
+            // 使用发布码获取素材
+            const res = await publicAPI.usePublishCode(code);
+            if (res.code === 200 && res.data.material) {
+                const m = res.data.material;
+                const platformCode = res.data.platform?.code || 'xiaohongshu';
+                const publishUrl = res.data.publish_url || res.data.platform?.publish_url || platformPublishUrls[platformCode];
+                showMaterialModal(m, platformCode, publishUrl);
+            } else {
+                showToast(res.message || '获取素材失败', 'error');
+            }
+        }
+
+        function openPublishCode(code) {
+            window.open(`/p/${code}`, '_blank');
+        }
+
+        function copyPublishLink(code) {
+            const link = `${window.location.origin}/p/${code}`;
+            navigator.clipboard.writeText(link).then(() => {
+                showToast('链接已复制');
+            }).catch(() => {
+                const input = document.createElement('input');
+                input.value = link;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+                showToast('链接已复制');
+            });
+        }
+
+        let currentMaterialData = null;
+
+        function normalizeMediaUrl(url) {
+            if (!url) return '';
+            let u = String(url).trim();
+            if (!u) return '';
+
+            u = u.replace(/\\+/g, '/'); // windows path -> url path
+
+            // data/blob urls
+            if (u.startsWith('data:') || u.startsWith('blob:')) return u;
+
+            // protocol relative
+            if (u.startsWith('//')) return `${window.location.protocol}${u}`;
+
+            // absolute url
+            if (/^https?:\/\//i.test(u)) {
+                // avoid mixed-content blocking when the page is https
+                if (window.location.protocol === 'https:' && u.startsWith('http://')) {
+                    return `https://${u.slice('http://'.length)}`;
+                }
+                return u;
+            }
+
+            // handle "./uploads/xx" "../uploads/xx" "uploads/xx"
+            const uploadsIdx = u.indexOf('uploads/');
+            if (uploadsIdx >= 0) {
+                u = '/' + u.slice(uploadsIdx);
+            }
+
+            if (!u.startsWith('/')) u = '/' + u;
+            return u;
+        }
+
+        function buildAltMediaUrl(src) {
+            const u = normalizeMediaUrl(src);
+            if (!u) return '';
+
+            // if /uploads isn't reachable in some deployments, try /api/uploads
+            if (u.startsWith('/uploads/')) return '/api' + u;
+            if (u.startsWith('/api/uploads/')) return u.replace(/^\/api/, '');
+            return '';
+        }
+
+        function handleMaterialImageError(imgEl) {
+            const current = imgEl.getAttribute('src') || '';
+            const alt = imgEl.getAttribute('data-alt-src') || '';
+
+            // 尝试备用URL
+            if (alt && alt !== current && !imgEl.dataset.triedAlt) {
+                imgEl.dataset.triedAlt = '1';
+                imgEl.src = alt;
+                return;
+            }
+
+            // 尝试添加 /api 前缀
+            if (!imgEl.dataset.triedApi && current.startsWith('/uploads/')) {
+                imgEl.dataset.triedApi = '1';
+                imgEl.src = '/api' + current;
+                return;
+            }
+
+            // 尝试移除 /api 前缀
+            if (!imgEl.dataset.triedNoApi && current.startsWith('/api/uploads/')) {
+                imgEl.dataset.triedNoApi = '1';
+                imgEl.src = current.replace('/api', '');
+                return;
+            }
+
+            // 所有尝试都失败，显示占位图标
+            const parent = imgEl.parentElement;
+            if (parent) {
+                parent.innerHTML = "<div style='display:flex;align-items:center;justify-content:center;height:100%;background:#f3f4f6;'><i class='fas fa-image' style='color:#9ca3af; font-size: 1.5rem;'></i></div>";
+            }
+        }
+
+        // 解析图片/视频JSON
+        function parseMediaList(str) {
+            const pickUrl = (item) => {
+                if (!item) return '';
+                if (typeof item === 'string') return item;
+                if (typeof item === 'object') {
+                    return item.url || item.path || item.src || item.file || item.file_url || item.fileUrl ||
+                        item.file_path || item.filePath || item.image || item.img || item.preview || '';
+                }
+                return '';
+            };
+
+            if (!str || str === 'null' || str === '[]') return [];
+            if (Array.isArray(str)) return str.map(pickUrl).filter(Boolean).map(normalizeMediaUrl).filter(Boolean);
+            if (typeof str === 'object') {
+                if (Array.isArray(str.urls)) return str.urls.map(pickUrl).filter(Boolean).map(normalizeMediaUrl).filter(Boolean);
+                if (Array.isArray(str.list)) return str.list.map(pickUrl).filter(Boolean).map(normalizeMediaUrl).filter(Boolean);
+                if (Array.isArray(str.files)) return str.files.map(pickUrl).filter(Boolean).map(normalizeMediaUrl).filter(Boolean);
+                return [pickUrl(str)].filter(Boolean).map(normalizeMediaUrl).filter(Boolean);
+            }
+            if (typeof str !== 'string') return [];
+            try {
+                const parsed = JSON.parse(str);
+                if (Array.isArray(parsed)) return parsed.map(pickUrl).filter(Boolean).map(normalizeMediaUrl).filter(Boolean);
+                if (typeof parsed === 'object') {
+                    if (Array.isArray(parsed.urls)) return parsed.urls.map(pickUrl).filter(Boolean).map(normalizeMediaUrl).filter(Boolean);
+                    if (Array.isArray(parsed.list)) return parsed.list.map(pickUrl).filter(Boolean).map(normalizeMediaUrl).filter(Boolean);
+                    if (Array.isArray(parsed.files)) return parsed.files.map(pickUrl).filter(Boolean).map(normalizeMediaUrl).filter(Boolean);
+                    return [pickUrl(parsed)].filter(Boolean).map(normalizeMediaUrl).filter(Boolean);
+                }
+                return [];
+            } catch (e) {
+                // 可能是逗号分隔的字符串
+                if (str.includes(',') || str.includes(';') || str.includes('|')) {
+                    return str.split(/[;,|]+/).map(s => normalizeMediaUrl(s.trim())).filter(Boolean);
+                }
+                return str ? [normalizeMediaUrl(str.trim())].filter(Boolean) : [];
+            }
+        }
+
+        // 下载文件
+        function downloadFile(url, filename) {
+            const primary = normalizeMediaUrl(url);
+            const alt = buildAltMediaUrl(primary);
+            const finalUrl = alt || primary;
+            if (!finalUrl) {
+                showToast('下载链接无效', 'error');
+                return;
+            }
+            const link = document.createElement('a');
+            link.href = finalUrl;
+            link.download = filename || 'download';
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('开始下载');
+        }
+
+        // 查看大图
+        function viewLargeImage(url) {
+            const primary = normalizeMediaUrl(url);
+            const alt = buildAltMediaUrl(primary);
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out;';
+            modal.innerHTML = `<img src="${primary}" data-alt-src="${alt}" style="max-width:90%;max-height:90%;object-fit:contain;border-radius:8px;" onerror="handleMaterialImageError(this)">`;
+            modal.onclick = () => modal.remove();
+            document.body.appendChild(modal);
+        }
+
+        async function showMaterialDetail(id) {
+            const res = await userAPI.getMaterialDetail(id);
+            if (res.code === 200) {
+                const m = res.data;
+                currentMaterialData = m;
+
+                // 解析图片和视频
+                const images = parseMediaList(m.images);
+                const videos = parseMediaList(m.videos);
+
+                // 构建图片画廊HTML
+                let imagesHtml = '';
+                if (images.length > 0) {
+                    imagesHtml = `
+                        <div class="form-group">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <label class="form-label" style="margin:0;"><i class="fas fa-images" style="color: var(--primary-color);"></i> 素材图片 (${images.length}张)</label>
+                                <button class="btn btn-sm btn-success" onclick="downloadAllImages()">
+                                    <i class="fas fa-download"></i> 下载全部
+                                </button>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 0.5rem;">
+                                ${images.map((img, idx) => `
+                                    <div style="position: relative; aspect-ratio: 1; background: var(--bg-tertiary); border-radius: var(--radius-md); overflow: hidden; cursor: pointer;" onclick="viewLargeImage('${img}')">
+                                        <img src="${img}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-image\\' style=\\'font-size:1.5rem;color:var(--text-muted);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)\\'></i>'">
+                                        <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.7)); padding: 4px; text-align: right;">
+                                            <button class="btn btn-sm" style="padding: 2px 6px; background: rgba(255,255,255,0.2); color: white; border: none;" onclick="event.stopPropagation(); downloadFile('${img}', 'image_${idx + 1}.jpg')">
+                                                <i class="fas fa-download" style="font-size: 10px;"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // 构建视频展示HTML
+                let videosHtml = '';
+                if (videos.length > 0) {
+                    videosHtml = `
+                        <div class="form-group">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <label class="form-label" style="margin:0;"><i class="fas fa-video" style="color: var(--success-color);"></i> 素材视频 (${videos.length}个)</label>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                ${videos.map((video, idx) => `
+                                    <div style="background: var(--bg-tertiary); border-radius: var(--radius-md); padding: 0.75rem;">
+                                        <video controls style="width: 100%; max-height: 200px; border-radius: var(--radius-sm);">
+                                            <source src="${video}" type="video/mp4">
+                                            您的浏览器不支持视频播放
+                                        </video>
+                                        <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
+                                            <button class="btn btn-sm btn-outline" onclick="downloadFile('${video}', 'video_${idx + 1}.mp4')">
+                                                <i class="fas fa-download"></i> 下载视频
+                                            </button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                document.getElementById('materialDetailContent').innerHTML = `
+                    <h4 style="margin-bottom: 1rem;">${m.title}</h4>
+                    ${imagesHtml}
+                    ${videosHtml}
+                    <div class="form-group">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label class="form-label">正文内容</label>
+                            <button class="btn btn-sm btn-outline" onclick="copyText('${encodeURIComponent(m.content || '')}', '正文')">
+                                <i class="fas fa-copy"></i> 复制
+                            </button>
+                        </div>
+                        <div id="detailContent" style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-md); white-space: pre-wrap; max-height: 200px; overflow-y: auto;">${m.content || '无内容'}</div>
+                    </div>
+                    <div class="form-group">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label class="form-label">话题</label>
+                            <button class="btn btn-sm btn-outline" onclick="copyText('${encodeURIComponent(m.topics || '')}', '话题')">
+                                <i class="fas fa-copy"></i> 复制
+                            </button>
+                        </div>
+                        <div id="detailTopics" style="background: var(--bg-tertiary); padding: 0.75rem; border-radius: var(--radius-md);">${m.topics || '-'}</div>
+                    </div>
+                `;
+                document.getElementById('materialDetailModal').classList.add('active');
+            }
+        }
+
+        // 下载所有图片
+        function downloadAllImages() {
+            if (!currentMaterialData) return;
+            const images = parseMediaList(currentMaterialData.images);
+            if (images.length === 0) {
+                showToast('没有可下载的图片', 'warning');
+                return;
+            }
+            images.forEach((img, idx) => {
+                setTimeout(() => downloadFile(img, `image_${idx + 1}.jpg`), idx * 500);
+            });
+            showToast(`开始下载 ${images.length} 张图片`);
+        }
+
+        function copyText(encodedText, label) {
+            const text = decodeURIComponent(encodedText);
+            if (!text) { showToast('没有可复制的内容', 'warning'); return; }
+            navigator.clipboard.writeText(text).then(() => {
+                showToast(label + '已复制');
+            }).catch(() => {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast(label + '已复制');
+            });
+        }
+
+        function copyCurrentMaterial() {
+            if (!currentMaterialData) { showToast('没有素材数据', 'warning'); return; }
+            const m = currentMaterialData;
+            const allText = `${m.title || ''}\n\n${m.content || ''}\n\n${m.topics || ''}`;
+            navigator.clipboard.writeText(allText).then(() => {
+                showToast('素材已复制到剪贴板');
+            }).catch(() => {
+                const textarea = document.createElement('textarea');
+                textarea.value = allText;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast('素材已复制到剪贴板');
+            });
+        }
+
+        let currentPublishUrl = '';
+        let currentPublishMaterial = null;
+        let currentPublishPlatformCode = 'xiaohongshu';
+
+        async function usePublishCode() {
+            const code = document.getElementById('publishCodeInput').value.trim();
+            if (!code) { showToast('请输入发布码', 'error'); return; }
+
+            const res = await publicAPI.usePublishCode(code);
+            if (res.code === 200) {
+                showToast('验证成功');
+                // 显示素材内容模态框
+                if (res.data.material) {
+                    const m = res.data.material;
+                    const platformCode = res.data.platform?.code || 'xiaohongshu';
+                    const publishUrl = res.data.publish_url || res.data.platform?.publish_url || platformPublishUrls[platformCode];
+                    showMaterialModal(m, platformCode, publishUrl);
+                }
+            } else {
+                showToast(res.message || '发布码无效', 'error');
+            }
+        }
+
+        function closeMaterialModal() {
+            document.getElementById('materialModal').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        function copyMaterialContent(elementId) {
+            const text = document.getElementById(elementId).textContent;
+            if (!text) { showToast('没有可复制的内容', 'warning'); return; }
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('内容已复制');
+            }).catch(() => {
+                // fallback
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast('内容已复制');
+            });
+        }
+
+        function copyAllMaterial() {
+            const title = document.getElementById('materialTitle').textContent || '';
+            const content = document.getElementById('materialContent').textContent || '';
+            const topics = document.getElementById('materialTopics').textContent || '';
+            const allText = `${title}\n\n${content}\n\n${topics}`;
+            navigator.clipboard.writeText(allText).then(() => {
+                showToast('全部内容已复制');
+            }).catch(() => {
+                const textarea = document.createElement('textarea');
+                textarea.value = allText;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast('全部内容已复制');
+            });
+        }
+
+        function buildMaterialText() {
+            const title = (currentPublishMaterial?.title || document.getElementById('materialTitle')?.textContent || '').trim();
+            const content = (currentPublishMaterial?.content || document.getElementById('materialContent')?.textContent || '').trim();
+            const topics = (currentPublishMaterial?.topics || document.getElementById('materialTopics')?.textContent || '').trim();
+            return [title, content, topics].filter(Boolean).join('\n\n');
+        }
+
+        function buildXhsPublishUrl() {
+            return 'xhsdiscover://post';
+        }
+
+        function copyTextToClipboard(text, successMessage) {
+            if (!text) return Promise.resolve(false);
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                return navigator.clipboard.writeText(text).then(() => {
+                    if (successMessage) showToast(successMessage);
+                    return true;
+                }).catch(() => fallbackCopy(text, successMessage));
+            }
+            return fallbackCopy(text, successMessage);
+        }
+
+        function fallbackCopy(text, successMessage) {
+            return new Promise(resolve => {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                if (successMessage) showToast(successMessage);
+                resolve(true);
+            });
+        }
+
+        function openAppWithFallback(appUrl, fallbackUrl) {
+            // 只打开App，不打开网页版
+            if (appUrl) {
+                window.location.href = appUrl;
+            }
+            // 移除网页fallback - 用户只需要打开App
+        }
+
+        function getPlatformPublishUrl(platformCode) {
+            return currentPublishUrl || platformPublishUrls[platformCode] || 'https://creator.xiaohongshu.com/';
+        }
+
+        function goToPublish() {
+            const platformCode = currentPublishPlatformCode || 'xiaohongshu';
+            const publishUrl = getPlatformPublishUrl(platformCode);
+            const materialText = buildMaterialText();
+            const openTarget = () => {
+                if (platformCode === 'xiaohongshu') {
+                    const appUrl = buildXhsPublishUrl();
+                    showToast('内容已复制，正在打开小红书');
+                    openAppWithFallback(appUrl, publishUrl);
+                } else {
+                    window.open(publishUrl, '_blank');
+                }
+            };
+
+            if (!materialText) {
+                openTarget();
+                return;
+            }
+
+            copyTextToClipboard(materialText, '内容已复制').finally(openTarget);
+        }
+
+        async function loadTasksForSelect() {
+            const res = await userAPI.listTasks({});
+            if (res.code === 200 && res.data.list) {
+                tasks = res.data.list;
+                document.getElementById('submitTaskId').innerHTML = '<option value="">选择要提交的任务</option>' +
+                    tasks.map(t => `<option value="${t.id}">${t.project_name} (${formatMoney(t.unit_price)})</option>`).join('');
+            }
+        }
+
+        async function loadSubmissions() {
+            const res = await userAPI.listSubmissions({ status: submissionFilter });
+            const tbody = document.getElementById('submissionsList');
+            const mobileContainer = document.getElementById('submissionsListMobile');
+
+            // 检测是否移动端
+            const isMobile = window.innerWidth <= 768;
+            if (mobileContainer) {
+                mobileContainer.style.display = isMobile ? 'flex' : 'none';
+            }
+
+            if (res.code === 200 && res.data.list && res.data.list.length > 0) {
+                // 桌面端表格
+                tbody.innerHTML = res.data.list.map(s => `
+          <tr>
+            <td><strong>${s.task?.project_name || '任务'}</strong></td>
+            <td><a href="${s.publish_link}" target="_blank" style="display: inline-block; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${s.publish_link}</a></td>
+            <td class="amount ${s.status === 'approved' ? 'amount-positive' : ''}">${s.status === 'approved' ? formatMoney(s.total_amount) : '-'}</td>
+            <td>${getStatusBadge(s.status)}</td>
+            <td>${formatDate(s.created_at)}</td>
+          </tr>
+        `).join('');
+
+                // 移动端卡片列表
+                if (mobileContainer) {
+                    mobileContainer.innerHTML = res.data.list.map(s => {
+                        const statusClass = s.status === 'pending' ? 'pending' : (s.status === 'approved' ? 'approved' : 'rejected');
+                        return `
+                            <div class="mobile-submission-card ${statusClass}">
+                                <div class="mobile-submission-header">
+                                    <span class="mobile-submission-task">${s.task?.project_name || '任务'}</span>
+                                    ${getStatusBadge(s.status)}
+                                </div>
+                                <div class="mobile-submission-link">
+                                    <a href="${s.publish_link}" target="_blank">${s.publish_link}</a>
+                                </div>
+                                <div class="mobile-submission-meta">
+                                    <span>${s.status === 'approved' ? '奖励：' + formatMoney(s.total_amount) : '待审核'}</span>
+                                    <span>${formatDate(s.created_at)}</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            } else {
+                tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><i class="fas fa-clipboard-list"></i><h3>暂无提交记录</h3></div></td></tr>';
+                if (mobileContainer) {
+                    mobileContainer.innerHTML = '<div class="empty-state" style="padding: 2rem; text-align: center;"><i class="fas fa-clipboard-list" style="font-size: 2rem; color: var(--text-muted); margin-bottom: 1rem;"></i><h3>暂无提交记录</h3><p style="color: var(--text-secondary);">提交链接后将在这里显示</p></div>';
+                }
+            }
+        }
+
+        function filterSubmissions(status) {
+            submissionFilter = status;
+            document.querySelectorAll('#submissionsSection .tab').forEach((tab, i) => {
+                tab.classList.toggle('active', (status === '' && i === 0) || (status === 'pending' && i === 1) || (status === 'approved' && i === 2));
+            });
+            loadSubmissions();
+        }
+
+        async function submitTask() {
+            const taskId = document.getElementById('submitTaskId').value;
+            const link = document.getElementById('submitLink').value.trim();
+
+            if (!taskId) { showToast('请选择任务', 'error'); return; }
+            if (!link) { showToast('请输入发布链接', 'error'); return; }
+
+            const res = await userAPI.submitTask({ task_id: parseInt(taskId), publish_link: link });
+            if (res.code === 200) {
+                showToast('提交成功，等待审核');
+                document.getElementById('submitLink').value = '';
+                loadSubmissions();
+                loadDashboard();
+            } else {
+                showToast(res.message || '提交失败', 'error');
+            }
+        }
+
+        // 提现配置
+        let withdrawConfig = { min_withdraw: 10, max_withdraw: 5000, withdraw_fee: 0 };
+
+        async function loadWallet() {
+            // 加载提现配置
+            const configRes = await fetch('/api/withdraw-config').then(r => r.json()).catch(() => null);
+            if (configRes && configRes.code === 200) {
+                withdrawConfig = configRes.data;
+                document.getElementById('configMinWithdraw').textContent = '¥' + withdrawConfig.min_withdraw;
+                document.getElementById('configMaxWithdraw').textContent = '¥' + withdrawConfig.max_withdraw;
+                document.getElementById('configProcessDays').textContent = (withdrawConfig.process_days || '1-3') + '个工作日';
+                document.getElementById('withdrawAmount').placeholder = '最低 ¥' + withdrawConfig.min_withdraw;
+                document.getElementById('withdrawAmount').min = withdrawConfig.min_withdraw;
+            }
+
+            const res = await userAPI.getProfile();
+            if (res.code === 200) {
+                const u = res.data.user;
+                const s = res.data.stats;
+                const balance = u.balance || 0;
+                document.getElementById('walletBalance').textContent = formatMoney(balance);
+                document.getElementById('availableBalance').textContent = formatMoney(balance);
+
+                // 加载提现记录
+                loadWithdrawalHistory();
+            }
+        }
+
+        async function loadWithdrawalHistory() {
+            const res = await userAPI.listWithdrawals();
+            const tbody = document.getElementById('withdrawalList');
+            if (res.code === 200 && res.data && res.data.length > 0) {
+                tbody.innerHTML = res.data.map(w => `
+                    <tr>
+                        <td class="amount amount-positive">${formatMoney(w.amount)}</td>
+                        <td>
+                            ${w.payment_method === 'wechat' ?
+                        '<i class="fab fa-weixin" style="color: #07c160;"></i> 微信' :
+                        '<i class="fab fa-alipay" style="color: #1677ff;"></i> 支付宝'}
+                        </td>
+                        <td>${getStatusBadge(w.status)}</td>
+                        <td>${formatDate(w.created_at)}</td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state"><i class="fas fa-history"></i><h3>暂无提现记录</h3></div></td></tr>';
+            }
+        }
+
+        function previewQRCode(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('qrcodePreviewImg').src = e.target.result;
+                    document.getElementById('qrcodePreview').style.display = 'block';
+                    document.getElementById('qrcodeUploadText').style.display = 'none';
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function calculateFee() {
+            const amount = parseFloat(document.getElementById('withdrawAmount').value) || 0;
+            const fee = 0; // 免手续费
+            const actual = Math.max(0, amount - fee);
+            document.getElementById('withdrawFee').textContent = formatMoney(fee);
+            document.getElementById('actualAmount').textContent = formatMoney(actual);
+        }
+
+        // 收款方式选择样式更新
+        document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
+            radio.addEventListener('change', function () {
+                document.querySelectorAll('input[name="paymentMethod"]').forEach(r => {
+                    r.parentElement.style.border = '2px solid var(--border-color)';
+                    r.parentElement.style.background = 'transparent';
+                });
+                this.parentElement.style.border = '2px solid var(--primary-color)';
+                this.parentElement.style.background = 'var(--bg-tertiary)';
+            });
+        });
+
+        async function requestWithdraw() {
+            const amount = parseFloat(document.getElementById('withdrawAmount').value);
+            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value || 'alipay';
+            const paymentAccount = document.getElementById('paymentAccount').value.trim();
+            const qrcodeFile = document.getElementById('qrcodeFile').files[0];
+
+            const minW = withdrawConfig.min_withdraw || 10;
+            const maxW = withdrawConfig.max_withdraw || 5000;
+
+            if (!amount || amount < minW) { showToast(`最低提现金额为${minW}元`, 'error'); return; }
+            if (amount > maxW) { showToast(`单笔最高提现${maxW}元`, 'error'); return; }
+            if (!paymentAccount) { showToast('请输入收款账号', 'error'); return; }
+            if (!qrcodeFile) { showToast('请上传收款码，以便商家打款', 'error'); return; }
+
+            let paymentQRCode = '';
+            if (qrcodeFile) {
+                const uploadRes = await uploadFile(qrcodeFile);
+                if (uploadRes.code === 200) {
+                    paymentQRCode = uploadRes.data.url;
+                }
+            }
+
+            const res = await userAPI.requestWithdraw({
+                amount,
+                payment_method: paymentMethod,
+                payment_account: paymentAccount,
+                payment_qrcode: paymentQRCode
+            });
+
+            if (res.code === 200) {
+                showToast('提现申请已提交，请等待审核');
+                document.getElementById('withdrawAmount').value = '';
+                document.getElementById('paymentAccount').value = '';
+                document.getElementById('qrcodeFile').value = '';
+                document.getElementById('qrcodePreview').style.display = 'none';
+                document.getElementById('qrcodeUploadText').style.display = 'block';
+                calculateFee();
+                loadWallet();
+                loadDashboard();
+            } else {
+                showToast(res.message || '提现失败', 'error');
+            }
+        }
+
+        async function loadReferrals() {
+            const res = await userAPI.getReferralInfo();
+            if (res.code === 200) {
+                const data = res.data;
+                const user = getUser();
+
+                // 基础数据
+                document.getElementById('inviteCode').textContent = data.invite_code || user?.username || '-';
+                document.getElementById('inviteeCount').textContent = data.invitee_count || 0;
+                document.getElementById('commissionTotal').textContent = formatMoney(data.total_commission || 0);
+                document.getElementById('refBalance').textContent = formatMoney(data.balance || 0);
+                document.getElementById('refTotalAmount').textContent = formatMoney(data.total_amount || 0);
+
+                // 推广链接
+                const inviteCode = data.invite_code || user?.username || '';
+                const inviteLink = window.location.origin + '/?ref=' + inviteCode;
+                document.getElementById('inviteLink').textContent = inviteLink;
+
+                // 今日数据（默认值）
+                document.getElementById('todayOrders').textContent = data.today_orders || 0;
+                document.getElementById('todayAmount').textContent = formatMoney(data.today_amount || 0);
+                document.getElementById('todayCommission').textContent = formatMoney(data.today_commission || 0);
+                document.getElementById('todayUsers').textContent = data.today_users || 0;
+
+                // 团队列表 - 使用 invitee_list (被邀请人列表)
+                const teamList = data.invitee_list || [];
+                if (teamList.length > 0) {
+                    document.getElementById('teamList').innerHTML = teamList.map(m => `
+                        <tr>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--primary-gradient); display: flex; align-items: center; justify-content: center; color: white; font-size: 0.75rem; font-weight: 600;">
+                                        ${(m.nickname || '用户').charAt(0)}
+                                    </div>
+                                    <span>${m.nickname || '用户'}</span>
+                                </div>
+                            </td>
+                            <td>${formatDate(m.created_at)}</td>
+                            <td class="amount amount-positive">+${formatMoney(m.contributed_commission || 0)}</td>
+                        </tr>
+                    `).join('');
+                }
+
+
+                // 更新移动端个人中心
+                updateMobileProfileInfo(user, data);
+            }
+        }
+
+        function copyInviteCode() {
+            const code = document.getElementById('inviteCode').textContent;
+            navigator.clipboard.writeText(code);
+            showToast('推广码已复制');
+        }
+
+        function copyInviteLink() {
+            const link = document.getElementById('inviteLink').textContent;
+            navigator.clipboard.writeText(link);
+            showToast('推广链接已复制');
+        }
+
+        async function handleUpdateProfile(e) {
+            e.preventDefault();
+
+            const username = document.getElementById('editUsername').value;
+            const nickname = document.getElementById('editNickname').value;
+            const avatarFile = document.getElementById('avatarFile').files[0];
+
+            let avatarUrl = currentUserData.avatar;
+
+            if (avatarFile) {
+                const uploadRes = await uploadFile(avatarFile);
+                if (uploadRes.code === 200) {
+                    avatarUrl = uploadRes.data.url;
+                } else {
+                    showToast('头像上传失败', 'error');
+                    return;
+                }
+            }
+
+            const data = {
+                username: username,
+                nickname: nickname,
+                avatar: avatarUrl
+            };
+
+            const res = await userAPI.updateProfile(data);
+            if (res.code === 200) {
+                showToast('个人资料已更新');
+                closeModal('editProfileModal');
+                loadDashboard(); // Reload to reflect changes
+            } else {
+                showToast(res.message || '更新失败', 'error');
+            }
+        }
+
+        function showEditProfileModal() {
+            if (!currentUserData) return;
+
+            document.getElementById('editUsername').value = currentUserData.username;
+            document.getElementById('editNickname').value = currentUserData.nickname || '';
+
+            const preview = document.getElementById('editAvatarPreview');
+            if (currentUserData.avatar) {
+                preview.innerHTML = `< img src = "${currentUserData.avatar}" style = "width: 100%; height: 100%; object-fit: cover;" > `;
+            } else {
+                preview.innerHTML = `< i class= "fas fa-user" style = "font-size: 2rem; color: var(--text-muted);" ></i > `;
+            }
+
+            document.getElementById('editProfileModal').classList.add('active');
+        }
+
+        function previewAvatar(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('editAvatarPreview').innerHTML = `< img src = "${e.target.result}" style = "width: 100%; height: 100%; object-fit: cover;" > `;
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // ========== 推广海报轮播 ==========
+        let promoPosters = [];
+        let currentPosterIndex = 0;
+
+        function loadPosters() {
+            // 从 localStorage 获取商家配置的海报
+            promoPosters = JSON.parse(localStorage.getItem('promoPosters') || '[]');
+
+            // 如果没有配置海报，使用默认海报
+            if (promoPosters.length === 0) {
+                promoPosters = ['/assets/assets/img/promo_poster.jpg'];
+            }
+
+            renderPoster();
+        }
+
+        function renderPoster() {
+            const img = document.getElementById('currentPosterImg');
+            const prevBtn = document.getElementById('posterPrevBtn');
+            const nextBtn = document.getElementById('posterNextBtn');
+            const indicators = document.getElementById('posterIndicators');
+            const counter = document.getElementById('posterCounter');
+            const downloadAllBtn = document.getElementById('downloadAllBtn');
+
+            if (!img) return;
+
+            // 更新海报图片
+            img.src = promoPosters[currentPosterIndex];
+            img.alt = `推广海报 ${currentPosterIndex + 1} `;
+
+            // 显示/隐藏导航按钮
+            if (promoPosters.length > 1) {
+                prevBtn.style.display = 'flex';
+                nextBtn.style.display = 'flex';
+                downloadAllBtn.style.display = 'inline-flex';
+            } else {
+                prevBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+                downloadAllBtn.style.display = 'none';
+            }
+
+            // 更新指示器
+            indicators.innerHTML = promoPosters.map((_, index) => `
+                    < button onclick = "goToPoster(${index})"
+                style = "width: ${index === currentPosterIndex ? '24px' : '8px'}; 
+                height: 8px;
+                border - radius: 4px;
+                border: none;
+                background: ${index === currentPosterIndex ? 'var(--primary-color)' : 'rgba(0,0,0,0.2)'};
+                cursor: pointer;
+                transition: all 0.3s ease; ">
+                </button >
+                    `).join('');
+
+            // 更新计数
+            counter.textContent = `${currentPosterIndex + 1} / ${promoPosters.length}`;
+        }
+
+        function prevPoster() {
+            currentPosterIndex = (currentPosterIndex - 1 + promoPosters.length) % promoPosters.length;
+            renderPoster();
+        }
+
+        function nextPoster() {
+            currentPosterIndex = (currentPosterIndex + 1) % promoPosters.length;
+            renderPoster();
+        }
+
+        function goToPoster(index) {
+            currentPosterIndex = index;
+            renderPoster();
+        }
+
+        function downloadCurrentPoster() {
+            const posterUrl = promoPosters[currentPosterIndex];
+            const filename = `推广海报_${currentPosterIndex + 1}.jpg`;
+            downloadFile(posterUrl, filename);
+            showToast('海报下载中...');
+        }
+
+        function downloadAllPosters() {
+            if (promoPosters.length === 0) {
+                showToast('暂无海报可下载', 'error');
+                return;
+            }
+
+            promoPosters.forEach((poster, idx) => {
+                setTimeout(() => {
+                    downloadFile(poster, `推广海报_${idx + 1}.jpg`);
+                }, idx * 500);
+            });
+            showToast(`开始下载 ${promoPosters.length} 张海报`);
+        }
+
+        // 页面加载时初始化海报
+        document.addEventListener('DOMContentLoaded', function () {
+            // 延迟加载海报，确保 DOM 已就绪
+            setTimeout(loadPosters, 100);
+        });
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        // 移动端菜单弹窗占位函数
+        function showRankingModal() {
+            showToast('我的排名功能开发中', 'info');
+        }
+
+        function showStatsModal() {
+            showToast('数据统计功能开发中', 'info');
+        }
+
+        function showTutorialModal() {
+            showToast('如何获客教程开发中', 'info');
+        }
+
+        function showAboutModal() {
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay active';
+            modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+            modal.innerHTML = `
+                <div class="modal" style="max-width: 320px; background: white; border-radius: 16px; padding: 1.5rem; text-align: center;">
+                    <h3 style="margin-bottom: 1rem;">关于我们</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 1rem;">代发系统 v1.0</p>
+                    <p style="color: var(--text-muted); font-size: 0.875rem;">专业的内容代发平台</p>
+                    <button class="btn btn-primary" style="margin-top: 1rem;" onclick="this.closest('.modal-overlay').remove()">确定</button>
+                </div>
+            `;
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+            document.body.appendChild(modal);
+        }
+
+        function showSettingsModal() {
+            showToast('设置功能开发中', 'info');
+        }
+
+        // 处理我的页面标签切换
+        function handleReferralTabClick(target, btn) {
+            // 更新标签按钮状态
+            const tabs = document.querySelectorAll('#referralQuickTabs .profile-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            btn.classList.add('active');
+
+            // 更新面板显示
+            const panels = document.querySelectorAll('.ref-tab-panel');
+            panels.forEach(panel => {
+                if (panel.dataset.panel === target) {
+                    panel.classList.add('active');
+                    panel.style.display = 'block';
+                } else {
+                    panel.classList.remove('active');
+                    panel.style.display = 'none';
+                }
+            });
+
+            // 如果是提现标签，更新余额显示
+            if (target === 'withdrawal') {
+                updateWithdrawableBalance();
+                loadWithdrawalHistory();
+            }
+        }
+
+        // 更新可提现余额
+        function updateWithdrawableBalance() {
+            const balanceEl = document.getElementById('refBalance');
+            const withdrawableEl = document.getElementById('withdrawableBalance');
+            if (balanceEl && withdrawableEl) {
+                withdrawableEl.textContent = balanceEl.textContent || '¥0.00';
+            }
+        }
+
+        // 加载提现记录
+        async function loadWithdrawalHistory() {
+            const container = document.getElementById('withdrawalHistoryList');
+            if (!container) return;
+
+            try {
+                const res = await userAPI.getWithdrawalHistory();
+                if (res.code === 200 && res.data && res.data.length > 0) {
+                    container.innerHTML = res.data.map(w => {
+                        const statusMap = {
+                            'pending': { text: '待处理', class: 'warning' },
+                            'approved': { text: '已通过', class: 'success' },
+                            'rejected': { text: '已拒绝', class: 'danger' },
+                            'completed': { text: '已完成', class: 'success' }
+                        };
+                        const status = statusMap[w.status] || { text: w.status, class: 'secondary' };
+                        return `
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid var(--border-color);">
+                                <div>
+                                    <div style="font-weight: 600; color: var(--text-primary);">-¥${(w.amount || 0).toFixed(2)}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">${formatDate(w.created_at)}</div>
+                                </div>
+                                <span class="badge badge-${status.class}">${status.text}</span>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    container.innerHTML = `
+                        <div class="empty-state" style="padding: 2rem;">
+                            <i class="fas fa-inbox" style="font-size: 2rem; color: var(--text-muted);"></i>
+                            <p style="color: var(--text-muted); margin-top: 0.5rem;">暂无提现记录</p>
+                        </div>
+                    `;
+                }
+            } catch (e) {
+                console.error('加载提现记录失败:', e);
+                container.innerHTML = `
+                    <div class="empty-state" style="padding: 2rem;">
+                        <i class="fas fa-inbox" style="font-size: 2rem; color: var(--text-muted);"></i>
+                        <p style="color: var(--text-muted); margin-top: 0.5rem;">暂无提现记录</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 处理提现申请
+        async function handleWithdrawal(e) {
+            e.preventDefault();
+
+            const amount = parseFloat(document.getElementById('withdrawAmount').value);
+            const method = document.getElementById('withdrawMethod').value;
+            const account = document.getElementById('withdrawAccount').value.trim();
+            const name = document.getElementById('withdrawName').value.trim();
+
+            if (!amount || amount < 1) {
+                showToast('最低提现金额为1元', 'error');
+                return;
+            }
+
+            if (!account) {
+                showToast('请输入收款账号', 'error');
+                return;
+            }
+
+            if (!name) {
+                showToast('请输入真实姓名', 'error');
+                return;
+            }
+
+            try {
+                const res = await userAPI.requestWithdrawal({
+                    amount: amount,
+                    method: method,
+                    account: account,
+                    name: name
+                });
+
+                if (res.code === 200) {
+                    showToast('提现申请已提交，请等待审核');
+                    // 清空表单
+                    document.getElementById('withdrawAmount').value = '';
+                    document.getElementById('withdrawAccount').value = '';
+                    document.getElementById('withdrawName').value = '';
+                    // 刷新提现记录
+                    loadWithdrawalHistory();
+                    // 刷新余额
+                    loadDashboard();
+                } else {
+                    showToast(res.message || '提现申请失败', 'error');
+                }
+            } catch (e) {
+                console.error('提现申请失败:', e);
+                showToast('提现申请失败，请稍后重试', 'error');
+            }
+        }
+    </script>
+</body>
+
+<!-- 编辑个人资料模态框 -->
+<div class="modal-overlay" id="editProfileModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">编辑个人资料</h3>
+            <button class="modal-close" onclick="closeModal('editProfileModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <form onsubmit="handleUpdateProfile(event)">
+            <div class="modal-body">
+                <div class="form-group" style="text-align: center;">
+                    <div style="position: relative; display: inline-block; cursor: pointer;"
+                        onclick="document.getElementById('avatarFile').click()">
+                        <div id="editAvatarPreview"
+                            style="width: 80px; height: 80px; border-radius: 50%; background: var(--bg-tertiary); display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 0 auto;">
+                            <i class="fas fa-user" style="font-size: 2rem; color: var(--text-muted);"></i>
+                        </div>
+                        <div
+                            style="position: absolute; bottom: 0; right: 0; background: var(--primary-color); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white;">
+                            <i class="fas fa-camera" style="font-size: 0.75rem;"></i>
+                        </div>
+                    </div>
+                    <input type="file" id="avatarFile" accept="image/*" style="display: none;"
+                        onchange="previewAvatar(this)">
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">点击更换头像</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">用户名</label>
+                    <input type="text" class="form-input" id="editUsername" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">昵称</label>
+                    <input type="text" class="form-input" id="editNickname">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('editProfileModal')">取消</button>
+                <button type="submit" class="btn btn-primary">保存</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 修改密码模态框 -->
+<div class="modal-overlay" id="changePasswordModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">修改密码</h3>
+            <button class="modal-close" onclick="closeModal('changePasswordModal')"><i
+                    class="fas fa-times"></i></button>
+        </div>
+        <form onsubmit="handleChangePassword(event)">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">原密码</label>
+                    <input type="password" class="form-input" id="oldPassword" required placeholder="请输入原密码">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">新密码</label>
+                    <input type="password" class="form-input" id="newPassword" required placeholder="请输入新密码（至少6位）">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">确认新密码</label>
+                    <input type="password" class="form-input" id="confirmPassword" required placeholder="请再次输入新密码">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('changePasswordModal')">取消</button>
+                <button type="submit" class="btn btn-primary">确认修改</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 修改手机号模态框 -->
+<div class="modal-overlay" id="bindPhoneModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 class="modal-title">修改手机号</h3>
+            <button class="modal-close" onclick="closeModal('bindPhoneModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <form onsubmit="handleUpdatePhone(event)">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">手机号</label>
+                    <input type="tel" class="form-input" id="editPhone" required placeholder="请输入新手机号">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('bindPhoneModal')">取消</button>
+                <button type="submit" class="btn btn-primary">确认修改</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+</html>

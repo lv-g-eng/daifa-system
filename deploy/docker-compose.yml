@@ -1,0 +1,61 @@
+# 代发系统 一键部署（效仿 sub2api 方案A）
+# 用法：先运行 ./docker-deploy.sh 生成 .env，再 docker compose up -d --build
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: distribution-mysql
+    restart: unless-stopped
+    environment:
+      # 应用以 root 连接，故 root 密码即应用 DB_PASSWORD
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD 未设置，请先运行 ./docker-deploy.sh}
+      MYSQL_DATABASE: ${DB_NAME:-distribution_system}
+      TZ: ${TZ:-Asia/Shanghai}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      # 数据落本地目录，便于 tar 迁移
+      - ./mysql_data:/var/lib/mysql
+      # 首次初始化自动建表 + 灌种子账号/平台/配置（AUTO_SETUP 等价物）
+      - ../database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - internal
+    # 注意：MySQL 不向宿主机暴露端口，仅走内部网络（安全加固）
+
+  app:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: distribution-system:local
+    container_name: distribution-app
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD 未设置，请先运行 ./docker-deploy.sh}
+      DB_NAME: ${DB_NAME:-distribution_system}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET 未设置，请先运行 ./docker-deploy.sh}
+      JWT_EXPIRE_HOUR: ${JWT_EXPIRE_HOUR:-168}
+      SERVER_PORT: "8080"
+      TZ: ${TZ:-Asia/Shanghai}
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    volumes:
+      # 上传文件持久化到本地目录
+      - ./uploads:/app/uploads
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge

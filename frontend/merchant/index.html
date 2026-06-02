@@ -1,0 +1,3255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商家后台 - 代发系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <style>
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--bg-tertiary);
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary-color);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .preview-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+
+        .preview-item {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .preview-item img,
+        .preview-item video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .preview-item .remove-btn {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        .preview-item .video-icon {
+            position: absolute;
+            bottom: 4px;
+            left: 4px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-size: 10px;
+        }
+    </style>
+    <!-- External Libraries for Batch Upload and QR Code -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+</head>
+
+<body>
+    <!-- 移动端菜单按钮 -->
+    <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+        <i class="fas fa-bars" id="mobileMenuIcon"></i>
+    </button>
+
+    <!-- 侧边栏遮罩层 -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleMobileMenu()"></div>
+
+    <div class="layout">
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">📱 商家后台</div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-item active" onclick="showSection('dashboard')">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>统计</span>
+                </div>
+                <div class="nav-item" onclick="showSection('materials')">
+                    <i class="fas fa-images"></i>
+                    <span>内容上传</span>
+                </div>
+                <div class="nav-item" onclick="showSection('tasks')">
+                    <i class="fas fa-tasks"></i>
+                    <span>任务发布</span>
+                </div>
+                <div class="nav-item" onclick="showSection('submissions')">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span>任务审核</span>
+                </div>
+                <div class="nav-item" onclick="showSection('users')">
+                    <i class="fas fa-users"></i>
+                    <span>用户管理</span>
+                </div>
+                <div class="nav-item" onclick="showSection('withdrawals')">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <span>提现管理</span>
+                </div>
+                <div class="nav-item" onclick="showSection('orders')">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>订单管理</span>
+                </div>
+                <div class="nav-item" onclick="showSection('distribution')">
+                    <i class="fas fa-sitemap"></i>
+                    <span>分销管理</span>
+                </div>
+                <div class="nav-item" onclick="showSection('settings')">
+                    <i class="fas fa-cog"></i>
+                    <span>系统设置</span>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar" id="userAvatar">M</div>
+                    <div class="user-details">
+                        <div class="user-name" id="userName">商家</div>
+                        <div class="user-role">商家账号</div>
+                    </div>
+                    <button class="btn btn-sm btn-outline" onclick="logout()" title="退出">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 统计 -->
+            <section id="dashboardSection">
+                <div class="page-header">
+                    <h1 class="page-title">数据统计</h1>
+                    <p class="page-subtitle">实时运营数据</p>
+                </div>
+
+                <div class="grid grid-4">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-tasks"></i></div>
+                        <div class="stat-value" id="taskCount">0</div>
+                        <div class="stat-label">发布任务</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
+                        <div class="stat-value" id="submissionCount">0</div>
+                        <div class="stat-label">提交总数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-check"></i></div>
+                        <div class="stat-value" id="approvedCount">0</div>
+                        <div class="stat-label">已通过</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                        <div class="stat-value" id="pendingCount">0</div>
+                        <div class="stat-label">待审核</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 内容上传 -->
+            <section id="materialsSection" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">内容上传</h1>
+                    <p class="page-subtitle">管理素材内容</p>
+                </div>
+
+                <div class="toolbar">
+                    <div class="toolbar-left">
+                        <select class="form-select" id="materialCategory" style="width: 150px;"
+                            onchange="onCategoryChange()">
+                            <option value="">全部赛道</option>
+                        </select>
+                    </div>
+                    <div class="toolbar-right">
+                        <button class="btn btn-outline" onclick="showBatchUploadModal()" style="margin-right: 0.5rem;">
+                            <i class="fas fa-layer-group"></i>
+                            批量上传
+                        </button>
+                        <button class="btn btn-primary" onclick="showAddMaterialModal()">
+                            <i class="fas fa-plus"></i>
+                            添加素材
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>素材编号</th>
+                                    <th>标题</th>
+                                    <th>图片</th>
+                                    <th>视频</th>
+                                    <th>赛道</th>
+                                    <th>平台</th>
+                                    <th>下载次数</th>
+                                    <th>创建时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="materialList">
+                                <tr>
+                                    <td colspan="9">
+                                        <div class="loading">
+                                            <div class="spinner"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Material Detail Display Area -->
+                <div id="materialDetailArea" class="card" style="display: none; margin-top: 1rem;">
+                    <div class="card-header"
+                        style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 class="card-title"><i class="fas fa-eye"></i> 素材详情</h3>
+                        <div>
+                            <button class="btn btn-sm btn-primary"
+                                onclick="showEditMaterialModal(currentDetailMaterialId)">
+                                <i class="fas fa-edit"></i> 编辑
+                            </button>
+                            <button class="btn btn-sm btn-outline" onclick="closeMaterialDetail()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="materialDetailContent" style="padding: 1rem;">
+                        <!-- Content will be loaded dynamically -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- 任务发布 -->
+            <section id="tasksSection" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">任务管理</h1>
+                    <p class="page-subtitle">发布和管理任务</p>
+                </div>
+
+                <div class="toolbar">
+                    <div class="toolbar-right">
+                        <button class="btn btn-primary" onclick="showAddTaskModal()">
+                            <i class="fas fa-plus"></i>
+                            发布任务
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>项目名称</th>
+                                    <th>平台</th>
+                                    <th>单价</th>
+                                    <th>有效期</th>
+                                    <th>完成/总数</th>
+                                    <th>状态</th>
+                                    <th>创建时间</th>
+                                </tr>
+                            </thead>
+                            <tbody id="taskList">
+                                <tr>
+                                    <td colspan="7">
+                                        <div class="loading">
+                                            <div class="spinner"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 任务审核 -->
+            <section id="submissionsSection" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">任务审核</h1>
+                    <p class="page-subtitle">审核用户提交的链接</p>
+                </div>
+
+                <div class="tabs">
+                    <div class="tab active" onclick="filterSubmissions('')">全部</div>
+                    <div class="tab" onclick="filterSubmissions('pending')">待审核</div>
+                    <div class="tab" onclick="filterSubmissions('approved')">已通过</div>
+                    <div class="tab" onclick="filterSubmissions('rejected')">已驳回</div>
+                </div>
+
+                <div class="card">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>用户</th>
+                                    <th>任务</th>
+                                    <th>发布链接</th>
+                                    <th>点赞数</th>
+                                    <th>链接状态</th>
+                                    <th>审核状态</th>
+                                    <th>提交时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="submissionList">
+                                <tr>
+                                    <td colspan="8">
+                                        <div class="loading">
+                                            <div class="spinner"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 用户管理 -->
+            <section id="usersSection" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">用户管理</h1>
+                    <p class="page-subtitle">管理平台用户</p>
+                </div>
+
+                <div class="card">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>用户名</th>
+                                    <th>昵称</th>
+                                    <th>提交数</th>
+                                    <th>余额</th>
+                                    <th>状态</th>
+                                    <th>注册时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userList">
+                                <tr>
+                                    <td colspan="8">
+                                        <div class="loading">
+                                            <div class="spinner"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 提现管理 -->
+            <section id="withdrawalsSection" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">提现管理</h1>
+                    <p class="page-subtitle">处理用户提现申请</p>
+                </div>
+
+                <div class="tabs">
+                    <div class="tab active" onclick="filterWithdrawals('')">全部</div>
+                    <div class="tab" onclick="filterWithdrawals('pending')">待处理</div>
+                    <div class="tab" onclick="filterWithdrawals('paid')">已打款</div>
+                </div>
+
+                <div class="card">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>用户</th>
+                                    <th>金额</th>
+                                    <th>收款码</th>
+                                    <th>状态</th>
+                                    <th>申请时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="withdrawalList">
+                                <tr>
+                                    <td colspan="6">
+                                        <div class="loading">
+                                            <div class="spinner"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 订单管理 -->
+            <section id="ordersSection" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">订单管理</h1>
+                    <p class="page-subtitle">查看用户订单和收益统计</p>
+                </div>
+
+                <div class="grid grid-4">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-shopping-cart"></i></div>
+                        <div class="stat-value" id="totalOrders">0</div>
+                        <div class="stat-label">总订单数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #34d399 100%);"><i
+                                class="fas fa-check-circle"></i></div>
+                        <div class="stat-value" id="completedOrders">0</div>
+                        <div class="stat-label">已完成</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);"><i
+                                class="fas fa-dollar-sign"></i></div>
+                        <div class="stat-value" id="totalOrderAmount">¥0</div>
+                        <div class="stat-label">总金额</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);"><i
+                                class="fas fa-coins"></i></div>
+                        <div class="stat-value" id="totalOrderCommission">¥0</div>
+                        <div class="stat-label">佣金支出</div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 1.5rem;">
+                    <div class="card-header">
+                        <h3 class="card-title">订单列表</h3>
+                    </div>
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>用户</th>
+                                    <th>类型</th>
+                                    <th>金额</th>
+                                    <th>状态</th>
+                                    <th>时间</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orderList">
+                                <tr>
+                                    <td colspan="6">
+                                        <div class="empty-state"><i class="fas fa-shopping-cart"></i>
+                                            <h3>暂无订单</h3>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 分销管理 -->
+            <section id="distributionSection" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">分销管理</h1>
+                    <p class="page-subtitle">管理用户邀请和佣金</p>
+                </div>
+
+                <div class="grid grid-4">
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fas fa-user-plus"></i></div>
+                        <div class="stat-value" id="totalInvitees">0</div>
+                        <div class="stat-label">邀请总数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #34d399 100%);"><i
+                                class="fas fa-user-check"></i></div>
+                        <div class="stat-value" id="activeInvitees">0</div>
+                        <div class="stat-label">活跃用户</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);"><i
+                                class="fas fa-coins"></i></div>
+                        <div class="stat-value" id="totalDistCommission">¥0.00</div>
+                        <div class="stat-label">总佣金</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);"><i
+                                class="fas fa-hand-holding-usd"></i></div>
+                        <div class="stat-value" id="paidDistCommission">¥0.00</div>
+                        <div class="stat-label">已结算</div>
+                    </div>
+                </div>
+
+                <!-- 分级佣金统计 -->
+                <div class="grid grid-2" style="margin-top: 1.5rem;">
+                    <div class="card"
+                        style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1)); border: 1px solid rgba(99, 102, 241, 0.2);">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div
+                                style="width: 50px; height: 50px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-level-up-alt" style="color: white; font-size: 1.25rem;"></i>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.875rem; color: var(--text-muted);">一级分销佣金</div>
+                                <div style="font-size: 1.5rem; font-weight: 700; color: #6366f1;" id="level1Commission">
+                                    ¥0.00</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">直接邀请产生的佣金</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card"
+                        style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(251, 191, 36, 0.1)); border: 1px solid rgba(245, 158, 11, 0.2);">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div
+                                style="width: 50px; height: 50px; background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-sitemap" style="color: white; font-size: 1.25rem;"></i>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.875rem; color: var(--text-muted);">二级分销佣金</div>
+                                <div style="font-size: 1.5rem; font-weight: 700; color: #f59e0b;" id="level2Commission">
+                                    ¥0.00</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted);">间接邀请产生的佣金</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="margin-top: 1.5rem;">
+                    <div class="card-header">
+                        <h3 class="card-title">邀请记录</h3>
+                    </div>
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>邀请人</th>
+                                    <th>被邀请人</th>
+                                    <th>完成任务数</th>
+                                    <th>发展下级</th>
+                                    <th>产生佣金</th>
+                                    <th>邀请时间</th>
+                                </tr>
+                            </thead>
+                            <tbody id="invitationList">
+                                <tr>
+                                    <td colspan="6">
+                                        <div class="empty-state"><i class="fas fa-sitemap"></i>
+                                            <h3>暂无邀请记录</h3>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 系统设置 -->
+            <section id="settingsSection" style="display: none;">
+                <div class="page-header">
+                    <h1 class="page-title">系统设置</h1>
+                    <p class="page-subtitle">管理系统配置</p>
+                </div>
+
+                <div class="grid grid-2" style="gap: 1.5rem;">
+                    <div class="card">
+                        <h4 style="margin-bottom: 1.5rem;"><i class="fas fa-percent"
+                                style="color: var(--primary-color);"></i> 佣金设置</h4>
+                        <div class="form-group">
+                            <label class="form-label">分销佣金比例 (%)</label>
+                            <input type="number" class="form-input" id="configCommissionRate" min="0" max="100"
+                                step="0.1" value="10">
+                            <small style="color: var(--text-muted);">用户邀请好友完成任务后获得的佣金比例</small>
+                        </div>
+                        <button class="btn btn-primary" onclick="saveConfig('commission_rate')">
+                            <i class="fas fa-save"></i> 保存
+                        </button>
+                    </div>
+
+                    <div class="card">
+                        <h4 style="margin-bottom: 1.5rem;"><i class="fas fa-wallet"
+                                style="color: var(--warning-color);"></i> 提现设置</h4>
+                        <div class="form-group">
+                            <label class="form-label">最低提现金额 (元)</label>
+                            <input type="number" class="form-input" id="configMinWithdraw" min="1" step="1" value="10">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">提现手续费 (%)</label>
+                            <input type="number" class="form-input" id="configWithdrawFee" min="0" max="100" step="0.1"
+                                value="0">
+                        </div>
+                        <button class="btn btn-primary" onclick="saveWithdrawConfig()">
+                            <i class="fas fa-save"></i> 保存
+                        </button>
+                    </div>
+
+                    <div class="card">
+                        <h4 style="margin-bottom: 1.5rem;"><i class="fas fa-clock"
+                                style="color: var(--success-color);"></i> 自动审核设置</h4>
+                        <div class="form-group">
+                            <label class="form-label">自动审核天数 (天)</label>
+                            <input type="number" class="form-input" id="configAutoReviewDays" min="1" max="30" step="1"
+                                value="7">
+                            <small style="color: var(--text-muted);">提交链接后多少天自动审核通过 (1-30天)</small>
+                        </div>
+                        <button class="btn btn-primary" onclick="saveConfig('auto_review_days')">
+                            <i class="fas fa-save"></i> 保存
+                        </button>
+                    </div>
+
+                    <div class="card">
+                        <h4 style="margin-bottom: 1.5rem;"><i class="fas fa-link" style="color: var(--info-color);"></i>
+                            链接检查设置</h4>
+                        <div class="form-group">
+                            <label class="form-label">链接检查间隔 (小时)</label>
+                            <input type="number" class="form-input" id="configLinkCheckInterval" min="1" max="168"
+                                step="1" value="1">
+                            <small style="color: var(--text-muted);">每隔多少小时检查一次链接有效性 (1-168小时)</small>
+                        </div>
+                        <button class="btn btn-primary" onclick="saveConfig('link_check_interval')">
+                            <i class="fas fa-save"></i> 保存
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 推广海报管理 -->
+                <div class="card" style="margin-top: 1.5rem;">
+                    <h4 style="margin-bottom: 1rem;"><i class="fas fa-image" style="color: var(--primary-color);"></i>
+                        推广海报管理</h4>
+                    <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1rem;">
+                        上传推广海报，用户可在"用户推广"页面切换查看并下载（支持多张）
+                    </p>
+
+                    <div class="form-group">
+                        <div class="upload-area" id="posterUploadArea"
+                            onclick="document.getElementById('posterInput').click()">
+                            <i class="fas fa-cloud-upload-alt"
+                                style="font-size: 2rem; color: var(--primary-color); margin-bottom: 0.5rem;"></i>
+                            <p style="margin: 0; color: var(--text-muted);">点击上传推广海报（支持多选）</p>
+                            <small style="color: var(--text-muted);">建议尺寸：750x1334px，支持 JPG、PNG 格式</small>
+                        </div>
+                        <input type="file" id="posterInput" multiple accept="image/*" style="display: none;"
+                            onchange="handlePosterUpload(event)">
+                    </div>
+
+                    <div id="posterList"
+                        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                        <!-- 海报列表将通过 JS 动态加载 -->
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 添加素材模态框 -->
+    <div class="modal-overlay" id="addMaterialModal">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3 class="modal-title">添加素材</h3>
+                <button class="modal-close" onclick="closeModal('addMaterialModal')"><i
+                        class="fas fa-times"></i></button>
+            </div>
+            <form onsubmit="handleAddMaterial(event)">
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label">素材编号 *</label>
+                            <input type="text" class="form-input" id="newMaterialNo" required placeholder="如：M001">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">序号</label>
+                            <input type="number" class="form-input" id="newMaterialSequence" placeholder="排序序号" min="0">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label">所属平台 *</label>
+                            <select class="form-select" id="newMaterialPlatform" required>
+                                <option value="">选择平台</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">所属赛道</label>
+                            <input type="text" class="form-input" id="newMaterialCategory" placeholder="如：美妆、穿搭、美食">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">标题 *</label>
+                        <input type="text" class="form-input" id="newMaterialTitle" required placeholder="素材标题">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">正文内容</label>
+                        <textarea class="form-textarea" id="newMaterialContent" rows="5"
+                            placeholder="输入正文内容，可直接复制粘贴到小红书发布"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">话题标签</label>
+                        <input type="text" class="form-input" id="newMaterialTopics" placeholder="#话题1 #话题2 #话题3">
+                        <small style="color: var(--text-muted); font-size: 0.75rem;">多个话题用空格分隔，每个话题以#开头</small>
+                    </div>
+
+                    <!-- 图片上传 -->
+                    <div class="form-group">
+                        <label class="form-label">素材图片</label>
+                        <div class="upload-area" id="imageUploadArea"
+                            onclick="document.getElementById('materialImages').click()">
+                            <i class="fas fa-cloud-upload-alt"
+                                style="font-size: 2rem; color: var(--primary-color); margin-bottom: 0.5rem;"></i>
+                            <p style="margin: 0; color: var(--text-muted);">点击或拖拽上传图片（支持多选）</p>
+                            <small style="color: var(--text-muted);">支持 JPG、PNG、GIF、WebP 格式</small>
+                        </div>
+                        <input type="file" id="materialImages" multiple accept="image/*" style="display: none;"
+                            onchange="handleImageSelect(event)">
+                        <div id="imagePreviewList" class="preview-list"></div>
+                    </div>
+
+                    <!-- 视频上传 -->
+                    <div class="form-group">
+                        <label class="form-label">素材视频</label>
+                        <div class="upload-area" id="videoUploadArea"
+                            onclick="document.getElementById('materialVideos').click()">
+                            <i class="fas fa-video"
+                                style="font-size: 2rem; color: var(--success-color); margin-bottom: 0.5rem;"></i>
+                            <p style="margin: 0; color: var(--text-muted);">点击或拖拽上传视频</p>
+                            <small style="color: var(--text-muted);">支持 MP4、MOV、AVI 格式</small>
+                        </div>
+                        <input type="file" id="materialVideos" multiple accept="video/*" style="display: none;"
+                            onchange="handleVideoSelect(event)">
+                        <div id="videoPreviewList" class="preview-list"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addMaterialModal')">取消</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> 保存素材</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 编辑素材模态框 -->
+    <div class="modal-overlay" id="editMaterialModal">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3 class="modal-title">编辑素材</h3>
+                <button class="modal-close" onclick="closeModal('editMaterialModal')"><i
+                        class="fas fa-times"></i></button>
+            </div>
+            <form onsubmit="handleEditMaterial(event)">
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                    <input type="hidden" id="editMaterialId">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label">素材编号</label>
+                            <input type="text" class="form-input" id="editMaterialNo" readonly
+                                style="background: var(--bg-tertiary);">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">序号</label>
+                            <input type="number" class="form-input" id="editMaterialSequence" min="0">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label class="form-label">所属平台</label>
+                            <select class="form-select" id="editMaterialPlatform">
+                                <option value="">选择平台</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">所属赛道</label>
+                            <input type="text" class="form-input" id="editMaterialCategory">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">标题 *</label>
+                        <input type="text" class="form-input" id="editMaterialTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">正文内容</label>
+                        <textarea class="form-textarea" id="editMaterialContent" rows="6"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">话题标签</label>
+                        <input type="text" class="form-input" id="editMaterialTopics" placeholder="#话题1 #话题2">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">当前图片</label>
+                        <div id="editMaterialImagesPreview" class="preview-list"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary"
+                        onclick="closeModal('editMaterialModal')">取消</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> 保存修改</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 批量上传素材模态框 -->
+    <div class="modal-overlay" id="batchUploadModal">
+        <div class="modal" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3 class="modal-title">批量上传素材</h3>
+                <button class="modal-close" onclick="closeModal('batchUploadModal')"><i
+                        class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                <!-- Upload Type Tabs -->
+                <div class="tabs" style="margin-bottom: 1rem;">
+                    <div class="tab active" onclick="switchBatchUploadTab('excel')">
+                        <i class="fas fa-file-excel"></i> Excel导入
+                    </div>
+                    <div class="tab" onclick="switchBatchUploadTab('word')">
+                        <i class="fas fa-file-word"></i> Word文件夹
+                    </div>
+                    <div class="tab" onclick="switchBatchUploadTab('folder')">
+                        <i class="fas fa-folder-tree"></i> 素材文件夹
+                    </div>
+                </div>
+
+                <!-- Common Settings -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">所属平台 *</label>
+                        <select class="form-select" id="batchPlatform" required>
+                            <option value="">选择平台</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">所属赛道</label>
+                        <input type="text" class="form-input" id="batchCategory" placeholder="如：考研、美妆、穿搭">
+                    </div>
+                </div>
+
+                <!-- Excel Upload Tab -->
+                <div id="batchTabExcel" class="batch-tab-content">
+                    <div class="alert alert-info"
+                        style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Excel格式：前6列依次为 序号/方向(赛道)/标题/文案/话题/图片链接</span>
+                    </div>
+                    <div class="upload-area" id="excelUploadArea"
+                        onclick="document.getElementById('excelFileInput').click()">
+                        <i class="fas fa-file-excel"
+                            style="font-size: 2.5rem; color: #10b981; margin-bottom: 0.5rem;"></i>
+                        <p style="margin: 0; color: var(--text-muted);">点击或拖拽上传 Excel 文件</p>
+                        <small style="color: var(--text-muted);">支持 .xlsx, .xls 格式</small>
+                    </div>
+                    <input type="file" id="excelFileInput" accept=".xlsx,.xls" style="display: none;"
+                        onchange="handleExcelFileSelect(event)">
+                    <div id="excelFileName" style="margin-top: 0.5rem; color: var(--text-secondary); display: none;">
+                        <i class="fas fa-file-excel" style="color: #10b981;"></i> <span id="excelFileNameText"></span>
+                        <button class="btn btn-sm btn-outline" onclick="clearExcelFile()" style="margin-left: 0.5rem;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Word Folder Upload Tab -->
+                <div id="batchTabWord" class="batch-tab-content" style="display: none;">
+                    <div class="alert alert-info"
+                        style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                        <i class="fas fa-info-circle"></i>
+                        <span>请选择包含 文案.docx（或其他.docx）和图片文件的文件夹内所有文件</span>
+                    </div>
+                    <div class="upload-area" id="wordUploadArea"
+                        onclick="document.getElementById('wordFilesInput').click()">
+                        <i class="fas fa-folder-open"
+                            style="font-size: 2.5rem; color: #6366f1; margin-bottom: 0.5rem;"></i>
+                        <p style="margin: 0; color: var(--text-muted);">点击选择文件夹中的所有文件</p>
+                        <small style="color: var(--text-muted);">支持 .docx 文案文件 + .jpg/.png 图片</small>
+                    </div>
+                    <input type="file" id="wordFilesInput" multiple accept=".docx,.doc,.jpg,.jpeg,.png,.gif,.webp"
+                        style="display: none;" onchange="handleWordFilesSelect(event)">
+                    <div id="wordFilesInfo" style="margin-top: 0.5rem; display: none;">
+                        <div style="color: var(--text-secondary);">
+                            <i class="fas fa-file-word" style="color: #6366f1;"></i> <span id="wordFileCount">0</span>
+                            个文档
+                            <i class="fas fa-image" style="color: #f59e0b; margin-left: 1rem;"></i> <span
+                                id="wordImageCount">0</span> 张图片
+                        </div>
+                        <button class="btn btn-sm btn-outline" onclick="clearWordFiles()" style="margin-top: 0.5rem;">
+                            <i class="fas fa-times"></i> 清除选择
+                        </button>
+                    </div>
+                </div>
+
+
+
+                <!-- Folder Upload Tab (每个子文件夹一条素材) -->
+                <div id="batchTabFolder" class="batch-tab-content" style="display: none;">
+                    <div class="alert alert-info"
+                        style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                        <i class="fas fa-info-circle"></i>
+                        <span>选择素材主文件夹，每个子文件夹作为一条素材（包含 文案.docx + 图片）</span>
+                    </div>
+                    <div class="upload-area" id="folderUploadArea"
+                        onclick="document.getElementById('folderFilesInput').click()">
+                        <i class="fas fa-folder-tree"
+                            style="font-size: 2.5rem; color: #f59e0b; margin-bottom: 0.5rem;"></i>
+                        <p style="margin: 0; color: var(--text-muted);">点击选择主文件夹中的所有文件</p>
+                        <small style="color: var(--text-muted);">每个子文件夹 = 1条素材（文案.docx + 图片）</small>
+                    </div>
+                    <input type="file" id="folderFilesInput" multiple webkitdirectory directory style="display: none;"
+                        onchange="handleFolderSelect(event)">
+                    <div id="folderInfo" style="margin-top: 0.5rem; display: none;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-folder-open" style="color: #f59e0b;"></i>
+                            <span id="folderInfoText"></span>
+                            <button class="btn btn-sm btn-outline" onclick="clearFolderFiles()"
+                                style="margin-left: 0.5rem;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div id="folderSubfolderList"
+                            style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted); max-height: 100px; overflow-y: auto;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preview Area -->
+                <div id="batchPreviewArea" style="display: none; margin-top: 1rem;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <h4 style="margin: 0;"><i class="fas fa-list"></i> 解析结果预览</h4>
+                        <span class="badge badge-primary" id="batchPreviewCount">0 条素材</span>
+                    </div>
+                    <div id="batchPreviewList"
+                        style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem;">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('batchUploadModal')">取消</button>
+                <button type="button" class="btn btn-outline" id="batchParseBtn" onclick="parseBatchUpload()">
+                    <i class="fas fa-search"></i> 解析预览
+                </button>
+                <button type="button" class="btn btn-primary" id="batchConfirmBtn" onclick="confirmBatchUpload()"
+                    disabled>
+                    <i class="fas fa-upload"></i> 确认上传
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 发布任务模态框 -->
+    <div class="modal-overlay" id="addTaskModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">发布任务</h3>
+                <button class="modal-close" onclick="closeModal('addTaskModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <form onsubmit="handleAddTask(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">所属平台 *</label>
+                        <select class="form-select" id="newTaskPlatform" required>
+                            <option value="">选择平台</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">项目名称 *</label>
+                        <input type="text" class="form-input" id="newTaskName" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">团队小组</label>
+                        <input type="text" class="form-input" id="newTaskGroup">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">任务说明</label>
+                        <textarea class="form-textarea" id="newTaskDesc" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">单价（元）*</label>
+                        <input type="number" class="form-input" id="newTaskPrice" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">团长金额（元）</label>
+                        <input type="number" class="form-input" id="newTaskLeaderPrice" step="0.01" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">引流奖励（元）</label>
+                        <input type="number" class="form-input" id="newTaskBonus" step="0.01" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">链接有效期（天）</label>
+                        <input type="number" class="form-input" id="newTaskValidity" value="30">
+                    </div>
+
+                    <!-- 自动审核设置 -->
+                    <div style="border-top: 1px solid var(--border-color); margin-top: 1rem; padding-top: 1rem;">
+                        <h4 style="margin: 0 0 1rem 0; font-size: 0.9rem; color: var(--text-secondary);">
+                            <i class="fas fa-magic"></i> 自动审核设置
+                        </h4>
+                        <div class="form-group" style="display: flex; align-items: center; gap: 1rem;">
+                            <label class="form-label" style="margin: 0; white-space: nowrap;">开启自动审核</label>
+                            <label class="switch">
+                                <input type="checkbox" id="newTaskAutoReview">
+                                <span class="slider"></span>
+                            </label>
+                            <small style="color: var(--text-muted);">开启后提交将自动通过审核</small>
+                        </div>
+                        <div class="form-group" id="sampleCheckGroup" style="display: none;">
+                            <label class="form-label">抽查比例（%）</label>
+                            <input type="number" class="form-input" id="newTaskSampleRate" value="10" min="0" max="100">
+                            <small style="color: var(--text-muted);">设置需要人工抽查的提交比例，0表示全部自动通过</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('addTaskModal')">取消</button>
+                    <button type="submit" class="btn btn-primary">发布</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 审核模态框 -->
+    <div class="modal-overlay" id="reviewModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">审核提交</h3>
+                <button class="modal-close" onclick="closeModal('reviewModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="reviewSubmissionId">
+                <div class="form-group">
+                    <label class="form-label">发布链接</label>
+                    <a href="#" id="reviewLink" target="_blank" class="form-input"
+                        style="display: block; word-break: break-all;"></a>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">驳回原因（仅驳回时填写）</label>
+                    <textarea class="form-textarea" id="reviewRejectReason" rows="2"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('reviewModal')">取消</button>
+                <button type="button" class="btn btn-danger" onclick="submitReview('rejected')">驳回</button>
+                <button type="button" class="btn btn-success" onclick="submitReview('approved')">通过</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 收款码查看模态框 -->
+    <div class="modal-overlay" id="withdrawQRCodeModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">用户收款码</h3>
+                <button class="modal-close" onclick="closeModal('withdrawQRCodeModal')"><i
+                        class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="text-align: center;">
+                <img id="withdrawQRCodeImage" src=""
+                    style="max-width: 100%; max-height: 400px; border-radius: var(--radius-md);">
+                <p style="color: var(--text-muted); margin-top: 1rem;">请扫码向用户转账</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('withdrawQRCodeModal')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 打款确认模态框 -->
+    <div class="modal-overlay" id="paymentConfirmModal">
+        <div class="modal" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3 class="modal-title">确认打款</h3>
+                <button class="modal-close" onclick="closeModal('paymentConfirmModal')"><i
+                        class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="payConfirmWithdrawalId">
+
+                <!-- 打款金额 -->
+                <div
+                    style="text-align: center; padding: 1rem; background: linear-gradient(135deg, #10b981 0%, #34d399 100%); border-radius: var(--radius-md); margin-bottom: 1.5rem;">
+                    <div style="color: rgba(255,255,255,0.8); font-size: 0.875rem; margin-bottom: 0.25rem;">打款金额</div>
+                    <div style="font-size: 2rem; font-weight: 700; color: white;" id="payConfirmAmount">¥0.00</div>
+                </div>
+
+                <!-- 收款账号信息 -->
+                <div
+                    style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1rem;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <span style="color: var(--text-muted); font-size: 0.875rem;">收款方式</span>
+                        <span style="font-weight: 600;" id="payConfirmMethod">支付宝</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: var(--text-muted); font-size: 0.875rem;">收款账号</span>
+                        <span style="font-weight: 600; word-break: break-all;" id="payConfirmAccount">-</span>
+                    </div>
+                </div>
+
+                <!-- 收款码 -->
+                <div id="payConfirmQRCodeArea" style="text-align: center; display: none;">
+                    <div style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.75rem;">
+                        <i class="fas fa-qrcode"></i> 扫码打款
+                    </div>
+                    <img id="payConfirmQRCode" src=""
+                        style="max-width: 180px; max-height: 180px; border-radius: var(--radius-md); border: 2px solid var(--border-color);">
+                </div>
+
+                <p style="color: var(--warning-color); font-size: 0.875rem; text-align: center; margin-top: 1rem;">
+                    <i class="fas fa-exclamation-triangle"></i> 请确认已向用户完成转账
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('paymentConfirmModal')">取消</button>
+                <button class="btn btn-success" onclick="confirmPayment()"><i class="fas fa-check"></i> 确认已打款</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 拒绝提现模态框 -->
+    <div class="modal-overlay" id="rejectModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">拒绝提现</h3>
+                <button class="modal-close" onclick="closeModal('rejectModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="rejectWithdrawalId">
+                <div class="form-group">
+                    <label class="form-label">拒绝原因</label>
+                    <textarea class="form-textarea" id="rejectReason" rows="3" placeholder="请输入拒绝原因（可选）"></textarea>
+                </div>
+                <p style="color: var(--warning-color); font-size: 0.875rem;"><i class="fas fa-info-circle"></i>
+                    拒绝后用户余额将自动退回</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('rejectModal')">取消</button>
+                <button class="btn btn-danger" onclick="confirmReject()"><i class="fas fa-times"></i> 确认拒绝</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container"></div>
+
+    <script src="/assets/js/api.js"></script>
+    <script>
+        if (!checkRole(['merchant'])) { }
+
+        let platforms = [];
+        let currentSubmissionFilter = '';
+        let currentWithdrawalFilter = '';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = getUser();
+            if (user) {
+                document.getElementById('userName').textContent = user.nickname || user.username;
+                document.getElementById('userAvatar').textContent = (user.nickname || user.username).charAt(0).toUpperCase();
+            }
+
+            loadPlatforms();
+            loadStats();
+        });
+
+        async function loadPlatforms() {
+            const res = await publicAPI.listPlatforms();
+            if (res.code === 200) {
+                platforms = res.data || [];
+                const options = platforms.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+
+                // 安全地更新平台下拉框，检查元素存在性
+                const newCodePlatformEl = document.getElementById('newCodePlatform');
+                if (newCodePlatformEl) {
+                    newCodePlatformEl.innerHTML = '<option value="">选择平台</option>' + options;
+                }
+
+                const newTaskPlatformEl = document.getElementById('newTaskPlatform');
+                if (newTaskPlatformEl) {
+                    newTaskPlatformEl.innerHTML = '<option value="">选择平台</option>' + options;
+                }
+            }
+
+            // 加载素材列表到发布码创建下拉框
+            const matRes = await merchantAPI.listMaterials({ page_size: 100 });
+            if (matRes.code === 200 && matRes.data.list) {
+                const matOptions = matRes.data.list.map(m => `<option value="${m.id}">${m.material_no} - ${m.title}</option>`).join('');
+                const newCodeMaterialEl = document.getElementById('newCodeMaterial');
+                if (newCodeMaterialEl) {
+                    newCodeMaterialEl.innerHTML = '<option value="">不关联素材</option>' + matOptions;
+                }
+            }
+        }
+
+        async function loadStats() {
+            const res = await merchantAPI.getStats();
+            if (res.code === 200) {
+                document.getElementById('taskCount').textContent = res.data.task_count;
+                document.getElementById('submissionCount').textContent = res.data.submission_count;
+                document.getElementById('approvedCount').textContent = res.data.approved_count;
+                document.getElementById('pendingCount').textContent = res.data.pending_count;
+            }
+        }
+
+        // 移动端菜单切换
+        function toggleMobileMenu() {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const icon = document.getElementById('mobileMenuIcon');
+
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+
+            if (sidebar.classList.contains('open')) {
+                icon.classList.remove('fa-bars');
+                icon.classList.add('fa-times');
+            } else {
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
+            }
+        }
+
+        function showSection(section) {
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            document.querySelectorAll('main > section').forEach(s => s.style.display = 'none');
+            document.getElementById(section + 'Section').style.display = 'block';
+
+            // 移动端自动关闭菜单
+            if (window.innerWidth <= 768) {
+                const sidebar = document.querySelector('.sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                const icon = document.getElementById('mobileMenuIcon');
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+                if (icon) {
+                    icon.classList.remove('fa-times');
+                    icon.classList.add('fa-bars');
+                }
+            }
+
+            // 加载数据
+            switch (section) {
+                case 'materials': loadCategories(); loadMaterials(); break;
+                case 'publishCodes': loadPublishCodes(); break;
+                case 'tasks': loadTasks(); break;
+                case 'submissions': loadSubmissions(); break;
+                case 'users': loadUsers(); break;
+                case 'withdrawals': loadWithdrawals(); break;
+                case 'orders': loadOrders(); break;
+                case 'distribution': loadDistribution(); break;
+                case 'settings': loadSettings(); loadPromoPosters(); break;
+            }
+        }
+
+        // 素材分页和分类变量
+        let materialCurrentPage = 1;
+        let materialTotalPages = 1;
+        let materialPageSize = 10;
+
+        // 加载赛道分类
+        async function loadCategories() {
+            try {
+                const res = await get('/categories');
+                if (res.code === 200 && res.data) {
+                    const select = document.getElementById('materialCategory');
+                    select.innerHTML = '<option value="">全部赛道</option>' +
+                        res.data.map(c => `<option value="${c}">${c}</option>`).join('');
+                }
+            } catch (e) {
+                console.error('加载赛道分类失败:', e);
+            }
+        }
+
+
+        // 素材管理
+        async function loadMaterials(page = 1) {
+            try {
+                materialCurrentPage = page;
+                const category = document.getElementById('materialCategory').value;
+                const res = await merchantAPI.listMaterials({ page, page_size: materialPageSize, category });
+                const tbody = document.getElementById('materialList');
+
+                if (res.code === 200 && res.data.list && res.data.list.length > 0) {
+                    const total = res.data.total || 0;
+                    materialTotalPages = Math.ceil(total / materialPageSize);
+
+                    tbody.innerHTML = res.data.list.map(m => {
+                        let images = [];
+                        let videos = [];
+                        try {
+                            const parsed = JSON.parse(m.images || '[]');
+                            images = Array.isArray(parsed) ? parsed : [];
+                        } catch (e) {
+                            images = [];
+                        }
+                        try {
+                            const parsedV = JSON.parse(m.videos || '[]');
+                            videos = Array.isArray(parsedV) ? parsedV : [];
+                        } catch (e) {
+                            videos = [];
+                        }
+
+                        // Image column with thumbnail and count
+                        const imageHtml = images.length > 0
+                            ? `<div style="display: flex; align-items: center; gap: 4px;">
+                                <img src="${images[0]}" style="width: 36px; height: 36px; object-fit: cover; border-radius: 4px;" onerror="this.style.display='none'">
+                                <span style="color: var(--text-muted); font-size: 0.85rem;">${images.length}张</span>
+                              </div>`
+                            : `<span style="color: var(--text-muted);">-</span>`;
+
+                        // Video column with count
+                        const videoHtml = videos.length > 0
+                            ? `<span style="color: var(--primary-color);"><i class="fas fa-video"></i> ${videos.length}个</span>`
+                            : `<span style="color: var(--text-muted);">-</span>`;
+
+                        return `
+                          <tr>
+                            <td><strong>${m.material_no || m.id}</strong></td>
+                            <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${m.title}">${m.title}</td>
+                            <td>${imageHtml}</td>
+                            <td>${videoHtml}</td>
+                            <td>${m.category || '-'}</td>
+                            <td>${m.platform?.name || '小红书'}</td>
+                            <td>${m.download_count || 0}</td>
+                            <td>${formatDate(m.created_at)}</td>
+                            <td>
+                              <button class="btn btn-sm btn-outline" onclick="showMaterialDetail(${m.id})" title="查看详情"><i class="fas fa-eye"></i></button>
+                              <button class="btn btn-sm btn-primary" onclick="showEditMaterialModal(${m.id})" title="编辑素材" style="margin-left: 4px;"><i class="fas fa-edit"></i></button>
+                              <button class="btn btn-sm btn-success" onclick="copyMaterialContent(${m.id})" title="复制内容" style="margin-left: 4px;"><i class="fas fa-copy"></i></button>
+                            </td>
+                          </tr>
+                        `;
+                    }).join('');
+
+                    // 渲染分页
+                    renderMaterialPagination(total);
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><i class="fas fa-images"></i><h3>暂无素材</h3><p>点击"添加素材"按钮上传第一个素材</p></div></td></tr>';
+                    renderMaterialPagination(0);
+                }
+            } catch (error) {
+                console.error('加载素材失败:', error);
+                document.getElementById('materialList').innerHTML = '<tr><td colspan="9"><div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h3>加载失败</h3><p>请刷新页面重试</p></div></td></tr>';
+            }
+        }
+
+        // 渲染素材分页控件
+        function renderMaterialPagination(total) {
+            let paginationContainer = document.getElementById('materialPagination');
+            if (!paginationContainer) {
+                const cardEl = document.querySelector('#materialsSection .card .table-container');
+                if (cardEl) {
+                    const div = document.createElement('div');
+                    div.id = 'materialPagination';
+                    div.className = 'pagination-container';
+                    div.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-top: 1px solid var(--border-color);';
+                    cardEl.parentElement.appendChild(div);
+                    paginationContainer = div;
+                }
+            }
+
+            if (!paginationContainer) return;
+
+            if (total === 0) {
+                paginationContainer.innerHTML = '';
+                return;
+            }
+
+            paginationContainer.innerHTML = `
+                <div style="color: var(--text-muted); font-size: 0.875rem;">
+                    共 ${total} 条素材，第 ${materialCurrentPage}/${materialTotalPages} 页
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-sm btn-outline" onclick="loadMaterials(1)" ${materialCurrentPage === 1 ? 'disabled' : ''}><i class="fas fa-angle-double-left"></i></button>
+                    <button class="btn btn-sm btn-outline" onclick="loadMaterials(${materialCurrentPage - 1})" ${materialCurrentPage === 1 ? 'disabled' : ''}><i class="fas fa-angle-left"></i> 上一页</button>
+                    <button class="btn btn-sm btn-outline" onclick="loadMaterials(${materialCurrentPage + 1})" ${materialCurrentPage >= materialTotalPages ? 'disabled' : ''}>下一页 <i class="fas fa-angle-right"></i></button>
+                    <button class="btn btn-sm btn-outline" onclick="loadMaterials(${materialTotalPages})" ${materialCurrentPage >= materialTotalPages ? 'disabled' : ''}><i class="fas fa-angle-double-right"></i></button>
+                </div>
+            `;
+        }
+
+        // 分类筛选变化
+        function onCategoryChange() {
+            materialCurrentPage = 1;
+            loadMaterials(1);
+        }
+
+        let currentDetailMaterialId = null;
+        let currentDetailMaterialData = null;
+
+        async function showMaterialDetail(id) {
+            const res = await merchantAPI.getMaterial(id);
+            if (res.code === 200) {
+                const m = res.data;
+                currentDetailMaterialId = m.id;
+                currentDetailMaterialData = m;
+
+                let images = [];
+                let videos = [];
+                try {
+                    const parsedImages = JSON.parse(m.images || '[]');
+                    images = Array.isArray(parsedImages) ? parsedImages : [];
+                } catch (e) { images = []; }
+                try {
+                    const parsedVideos = JSON.parse(m.videos || '[]');
+                    videos = Array.isArray(parsedVideos) ? parsedVideos : [];
+                } catch (e) { videos = []; }
+
+                let mediaHtml = '';
+                if (images.length > 0) {
+                    mediaHtml += `<div style="margin-top: 1rem;"><h4 style="margin-bottom: 0.5rem; color: var(--text-secondary);">素材图片 (${images.length}张)</h4><div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">`;
+                    images.forEach(img => {
+                        mediaHtml += `<img src="${img}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; cursor: pointer;" onclick="window.open('${img}', '_blank')">`;
+                    });
+                    mediaHtml += `</div></div>`;
+                }
+                if (videos.length > 0) {
+                    mediaHtml += `<div style="margin-top: 1rem;"><h4 style="margin-bottom: 0.5rem; color: var(--text-secondary);">素材视频 (${videos.length}个)</h4><div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">`;
+                    videos.forEach((vid, idx) => {
+                        mediaHtml += `
+                            <div style="background: var(--bg-tertiary); border-radius: 8px; padding: 0.5rem; border: 1px solid var(--border-color);">
+                                <video src="${vid}" style="width: 200px; height: 120px; object-fit: cover; border-radius: 6px;" controls></video>
+                                <div style="text-align: center; margin-top: 0.5rem;">
+                                    <a href="${vid}" download="video_${idx + 1}.mp4" class="btn btn-sm btn-outline" style="text-decoration: none;">
+                                        <i class="fas fa-download"></i> 下载
+                                    </a>
+                                </div>
+                            </div>`;
+                    });
+                    mediaHtml += `</div></div>`;
+                }
+
+                const detailHtml = `
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                        <div><span style="color: var(--text-muted);">素材编号</span><div style="font-weight: 600;">${m.material_no}</div></div>
+                        <div><span style="color: var(--text-muted);">赛道</span><div style="font-weight: 600;">${m.category || '-'}</div></div>
+                        <div><span style="color: var(--text-muted);">平台</span><div style="font-weight: 600;">${m.platform?.name || '-'}</div></div>
+                        <div><span style="color: var(--text-muted);">下载次数</span><div style="font-weight: 600;">${m.download_count}</div></div>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <span style="color: var(--text-muted);">标题</span>
+                        <div style="font-weight: 600; font-size: 1.1rem;">${m.title}</div>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <span style="color: var(--text-muted);">话题标签</span>
+                        <div style="color: var(--primary-color);">${m.topics || '-'}</div>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-muted);">正文内容</span>
+                        <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: 8px; margin-top: 0.5rem; white-space: pre-wrap; max-height: 200px; overflow-y: auto;">${m.content || '无'}</div>
+                    </div>
+                    ${mediaHtml}
+                `;
+
+                document.getElementById('materialDetailContent').innerHTML = detailHtml;
+                document.getElementById('materialDetailArea').style.display = 'block';
+                document.getElementById('materialDetailArea').scrollIntoView({ behavior: 'smooth' });
+            } else {
+                showToast('获取素材详情失败', 'error');
+            }
+        }
+
+        function closeMaterialDetail() {
+            document.getElementById('materialDetailArea').style.display = 'none';
+            currentDetailMaterialId = null;
+            currentDetailMaterialData = null;
+        }
+
+        async function showEditMaterialModal(id) {
+            const res = await merchantAPI.getMaterial(id);
+            if (res.code !== 200) {
+                showToast('获取素材详情失败', 'error');
+                return;
+            }
+            const m = res.data;
+
+            // Load platform options
+            const platformRes = await publicAPI.listPlatforms();
+            if (platformRes.code === 200) {
+                const select = document.getElementById('editMaterialPlatform');
+                select.innerHTML = '<option value="">选择平台</option>' +
+                    platformRes.data.map(p => `<option value="${p.id}"${p.id === m.platform_id ? ' selected' : ''}>${p.name}</option>`).join('');
+            }
+
+            // Intelligent content parsing - extract title from content if needed
+            let title = m.title || '';
+            let content = m.content || '';
+            let topics = m.topics || '';
+
+            // Check if title looks like it should be in topics (starts with # or contains '话题')
+            if (title && (title.includes('话题') || title.includes('注意') || title.startsWith('必加'))) {
+                // Title field contains instructions about topics, not actual title
+                // Try to extract real title from content
+                const contentLines = content.split('\n');
+                let extractedTitle = '';
+                let newContentLines = [];
+
+                for (let i = 0; i < contentLines.length; i++) {
+                    const line = contentLines[i].trim();
+                    // Check for "标题：xxx" pattern
+                    if (/^标题[：:]\s*/.test(line)) {
+                        extractedTitle = line.replace(/^标题[：:]\s*/, '').trim();
+                        continue;
+                    }
+                    newContentLines.push(contentLines[i]);
+                }
+
+                if (extractedTitle) {
+                    title = extractedTitle;
+                    content = newContentLines.join('\n').trim();
+                } else if (newContentLines.length > 0) {
+                    // Use first line as title if no "标题：" found
+                    const firstLine = newContentLines[0].trim();
+                    // Only use first line if it looks like a title (short enough, no special chars)
+                    if (firstLine.length > 0 && firstLine.length <= 50 && !firstLine.startsWith('#')) {
+                        title = firstLine;
+                        content = newContentLines.slice(1).join('\n').trim();
+                    }
+                }
+            } else if (!title && content) {
+                // No title, extract from content
+                const contentLines = content.split('\n');
+                for (let i = 0; i < contentLines.length; i++) {
+                    const line = contentLines[i].trim();
+                    if (/^标题[：:]\s*/.test(line)) {
+                        title = line.replace(/^标题[：:]\s*/, '').trim();
+                        content = contentLines.filter((_, idx) => idx !== i).join('\n').trim();
+                        break;
+                    }
+                }
+                // If still no title, use first non-hashtag line
+                if (!title && contentLines.length > 0) {
+                    const firstNonTagLine = contentLines.find(l => l.trim() && !l.trim().startsWith('#'));
+                    if (firstNonTagLine && firstNonTagLine.length <= 50) {
+                        title = firstNonTagLine.trim();
+                    }
+                }
+            }
+
+            // Fill form with parsed values
+            document.getElementById('editMaterialId').value = m.id;
+            document.getElementById('editMaterialNo').value = m.material_no;
+            document.getElementById('editMaterialSequence').value = m.sequence_no || 0;
+            document.getElementById('editMaterialCategory').value = m.category || '';
+            document.getElementById('editMaterialTitle').value = title;
+            document.getElementById('editMaterialContent').value = content;
+            document.getElementById('editMaterialTopics').value = topics;
+
+            // Display current images
+            let images = [];
+            try {
+                const parsed = JSON.parse(m.images || '[]');
+                images = Array.isArray(parsed) ? parsed : [];
+            } catch (e) { images = []; }
+
+            const previewContainer = document.getElementById('editMaterialImagesPreview');
+            if (images.length > 0) {
+                previewContainer.innerHTML = images.map((img, i) => `
+                    <div class="preview-item">
+                        <img src="${img}" alt="图片${i + 1}">
+                    </div>
+                `).join('');
+            } else {
+                previewContainer.innerHTML = '<span style="color: var(--text-muted);">暂无图片</span>';
+            }
+
+            openModal('editMaterialModal');
+        }
+
+        async function handleEditMaterial(e) {
+            e.preventDefault();
+
+            const id = document.getElementById('editMaterialId').value;
+            const platformId = parseInt(document.getElementById('editMaterialPlatform').value);
+
+            const data = {
+                title: document.getElementById('editMaterialTitle').value,
+                content: document.getElementById('editMaterialContent').value,
+                topics: document.getElementById('editMaterialTopics').value,
+                category: document.getElementById('editMaterialCategory').value,
+                sequence_no: parseInt(document.getElementById('editMaterialSequence').value) || 0,
+            };
+
+            if (platformId) {
+                data.platform_id = platformId;
+            }
+
+            showToast('正在保存...', 'info');
+
+            const res = await merchantAPI.updateMaterial(id, data);
+            if (res.code === 200) {
+                showToast('素材更新成功');
+                closeModal('editMaterialModal');
+                loadMaterials();
+                // Refresh detail if showing the same material
+                if (currentDetailMaterialId === parseInt(id)) {
+                    showMaterialDetail(id);
+                }
+            } else {
+                showToast(res.message || '更新失败', 'error');
+            }
+        }
+
+        function navigateToMaterialEdit(materialId) {
+            if (!materialId) return;
+            showSection('materials');
+            setTimeout(() => {
+                showMaterialDetail(materialId);
+            }, 300);
+        }
+
+        async function copyMaterialContent(id) {
+            const res = await merchantAPI.getMaterial(id);
+            if (res.code === 200) {
+                const m = res.data;
+                const text = `${m.title}\n\n${m.content || ''}\n\n${m.topics || ''}`.trim();
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('素材内容已复制');
+                }).catch(() => {
+                    showToast('复制失败', 'error');
+                });
+            }
+        }
+
+        function showAddMaterialModal() {
+            // 加载平台选项
+            loadPlatformsForMaterial();
+            // 清空表单
+            document.getElementById('newMaterialNo').value = '';
+            document.getElementById('newMaterialSequence').value = '';
+            document.getElementById('newMaterialTitle').value = '';
+            document.getElementById('newMaterialCategory').value = '';
+            document.getElementById('newMaterialContent').value = '';
+            document.getElementById('newMaterialTopics').value = '';
+            document.getElementById('imagePreviewList').innerHTML = '';
+            document.getElementById('videoPreviewList').innerHTML = '';
+            selectedImages = [];
+            selectedVideos = [];
+            document.getElementById('addMaterialModal').classList.add('active');
+        }
+
+        function showBatchUploadModal() {
+            loadPlatformsForBatch();
+            document.getElementById('batchCategory').value = '';
+            // Reset upload state
+            clearExcelFile();
+            clearWordFiles();
+            clearFolderFiles();
+            document.getElementById('batchPreviewArea').style.display = 'none';
+            document.getElementById('batchConfirmBtn').disabled = true;
+            parsedBatchMaterials = [];
+            document.getElementById('batchUploadModal').classList.add('active');
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/';
+        }
+
+        async function loadPlatformsForMaterial() {
+            const res = await publicAPI.listPlatforms();
+            if (res.code === 200) {
+                const select = document.getElementById('newMaterialPlatform');
+                select.innerHTML = '<option value="">选择平台</option>' +
+                    res.data.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+            }
+        }
+
+        async function loadPlatformsForBatch() {
+            const res = await publicAPI.listPlatforms();
+            if (res.code === 200) {
+                const select = document.getElementById('batchPlatform');
+                select.innerHTML = '<option value="">选择平台</option>' +
+                    res.data.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+            }
+        }
+
+        // 文件上传功能
+        let selectedImages = [];
+        let selectedVideos = [];
+
+        function handleImageSelect(event) {
+            const files = Array.from(event.target.files);
+            files.forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    selectedImages.push(file);
+                    addImagePreview(file);
+                }
+            });
+        }
+
+        function handleVideoSelect(event) {
+            const files = Array.from(event.target.files);
+            files.forEach(file => {
+                if (file.type.startsWith('video/')) {
+                    selectedVideos.push(file);
+                    addVideoPreview(file);
+                }
+            });
+        }
+
+        function addImagePreview(file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const previewList = document.getElementById('imagePreviewList');
+                const index = selectedImages.indexOf(file);
+                const div = document.createElement('div');
+                div.className = 'preview-item';
+                div.dataset.index = index;
+                div.innerHTML = `
+                    <img src="${e.target.result}" alt="预览">
+                    <button type="button" class="remove-btn" onclick="removeImage(${index})"><i class="fas fa-times"></i></button>
+                `;
+                previewList.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function addVideoPreview(file) {
+            const previewList = document.getElementById('videoPreviewList');
+            const index = selectedVideos.indexOf(file);
+            const div = document.createElement('div');
+            div.className = 'preview-item';
+            div.dataset.index = index;
+            div.innerHTML = `
+                <video src="${URL.createObjectURL(file)}"></video>
+                <span class="video-icon"><i class="fas fa-play"></i></span>
+                <button type="button" class="remove-btn" onclick="removeVideo(${index})"><i class="fas fa-times"></i></button>
+            `;
+            previewList.appendChild(div);
+        }
+
+        function removeImage(index) {
+            selectedImages.splice(index, 1);
+            refreshImagePreviews();
+        }
+
+        function removeVideo(index) {
+            selectedVideos.splice(index, 1);
+            refreshVideoPreviews();
+        }
+
+        function refreshImagePreviews() {
+            const previewList = document.getElementById('imagePreviewList');
+            previewList.innerHTML = '';
+            selectedImages.forEach((file, index) => addImagePreview(file));
+        }
+
+        function refreshVideoPreviews() {
+            const previewList = document.getElementById('videoPreviewList');
+            previewList.innerHTML = '';
+            selectedVideos.forEach((file, index) => addVideoPreview(file));
+        }
+
+        async function uploadFilesAndGetUrls(files) {
+            if (!files || files.length === 0) return [];
+
+            const urls = [];
+            for (const file of files) {
+                const res = await uploadFile(file);
+                if (res.code === 200) {
+                    urls.push(res.data.url);
+                }
+            }
+            return urls;
+        }
+
+        async function handleAddMaterial(e) {
+            e.preventDefault();
+
+            const platformId = parseInt(document.getElementById('newMaterialPlatform').value);
+            if (!platformId) {
+                showToast('请选择平台', 'error');
+                return;
+            }
+
+            showToast('正在上传素材...', 'info');
+
+            // 上传图片和视频
+            const imageUrls = await uploadFilesAndGetUrls(selectedImages);
+            const videoUrls = await uploadFilesAndGetUrls(selectedVideos);
+
+            const data = {
+                material_no: document.getElementById('newMaterialNo').value,
+                title: document.getElementById('newMaterialTitle').value,
+                category: document.getElementById('newMaterialCategory').value,
+                content: document.getElementById('newMaterialContent').value,
+                topics: document.getElementById('newMaterialTopics').value,
+                platform_id: platformId,
+                sequence_no: parseInt(document.getElementById('newMaterialSequence').value) || 0,
+                images: imageUrls,
+                videos: videoUrls,
+            };
+
+            const res = await merchantAPI.createMaterial(data);
+            if (res.code === 200) {
+                showToast('素材添加成功');
+                closeModal('addMaterialModal');
+                loadMaterials();
+            } else {
+                showToast(res.message || '添加失败', 'error');
+            }
+        }
+
+        // ========== 批量上传功能 ==========
+        let currentBatchTab = 'excel';
+        let selectedExcelFile = null;
+        let selectedWordFiles = { docs: [], images: [] };
+        let parsedBatchMaterials = [];
+
+        function switchBatchUploadTab(tab) {
+            currentBatchTab = tab;
+            // Update tabs UI
+            document.querySelectorAll('#batchUploadModal .tabs .tab').forEach(t => t.classList.remove('active'));
+            event.target.closest('.tab').classList.add('active');
+            // Show/hide content
+            document.getElementById('batchTabExcel').style.display = tab === 'excel' ? 'block' : 'none';
+            document.getElementById('batchTabWord').style.display = tab === 'word' ? 'block' : 'none';
+            document.getElementById('batchTabFolder').style.display = tab === 'folder' ? 'block' : 'none';
+            // Reset preview
+            document.getElementById('batchPreviewArea').style.display = 'none';
+            document.getElementById('batchConfirmBtn').disabled = true;
+            parsedBatchMaterials = [];
+        }
+
+        function handleExcelFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                selectedExcelFile = file;
+                document.getElementById('excelFileName').style.display = 'block';
+                document.getElementById('excelFileNameText').textContent = file.name;
+            }
+        }
+
+        function clearExcelFile() {
+            selectedExcelFile = null;
+            document.getElementById('excelFileInput').value = '';
+            document.getElementById('excelFileName').style.display = 'none';
+            document.getElementById('batchPreviewArea').style.display = 'none';
+            document.getElementById('batchConfirmBtn').disabled = true;
+        }
+
+        function handleWordFilesSelect(e) {
+            const files = Array.from(e.target.files);
+            selectedWordFiles.docs = files.filter(f => f.name.toLowerCase().endsWith('.docx') || f.name.toLowerCase().endsWith('.doc'));
+            selectedWordFiles.images = files.filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f.name));
+
+            document.getElementById('wordFilesInfo').style.display = 'block';
+            document.getElementById('wordFileCount').textContent = selectedWordFiles.docs.length;
+            document.getElementById('wordImageCount').textContent = selectedWordFiles.images.length;
+        }
+
+        function clearWordFiles() {
+            selectedWordFiles = { docs: [], images: [] };
+            document.getElementById('wordFilesInput').value = '';
+            document.getElementById('wordFilesInfo').style.display = 'none';
+            document.getElementById('batchPreviewArea').style.display = 'none';
+            document.getElementById('batchConfirmBtn').disabled = true;
+        }
+
+        // ========== 素材文件夹上传功能 ==========
+        let selectedFolderFiles = { subfolders: {} }; // { subfoldername: { docs: [], images: [] } }
+
+        function handleFolderSelect(e) {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+
+            // Group files by immediate subfolder
+            selectedFolderFiles.subfolders = {};
+
+            for (const file of files) {
+                const pathParts = file.webkitRelativePath.split('/');
+                // pathParts[0] = main folder, pathParts[1] = subfolder, pathParts[2+] = file
+                if (pathParts.length < 3) continue; // Skip files directly in main folder
+
+                const subfolder = pathParts[1];
+                if (!selectedFolderFiles.subfolders[subfolder]) {
+                    selectedFolderFiles.subfolders[subfolder] = { docs: [], images: [] };
+                }
+
+                const fileName = file.name.toLowerCase();
+                if (fileName.endsWith('.docx') || fileName.endsWith('.doc')) {
+                    selectedFolderFiles.subfolders[subfolder].docs.push(file);
+                } else if (/\.(jpg|jpeg|png|gif|webp)$/i.test(fileName)) {
+                    selectedFolderFiles.subfolders[subfolder].images.push(file);
+                }
+            }
+
+            const subfolderCount = Object.keys(selectedFolderFiles.subfolders).length;
+            document.getElementById('folderInfo').style.display = 'block';
+            document.getElementById('folderInfoText').textContent = `已选择 ${subfolderCount} 个子文件夹`;
+
+            // Show subfolder list
+            const subfolderList = Object.entries(selectedFolderFiles.subfolders)
+                .map(([name, data]) => `📁 ${name}: ${data.docs.length}个文案, ${data.images.length}张图片`)
+                .join('<br>');
+            document.getElementById('folderSubfolderList').innerHTML = subfolderList;
+        }
+
+        function clearFolderFiles() {
+            selectedFolderFiles = { subfolders: {} };
+            document.getElementById('folderFilesInput').value = '';
+            document.getElementById('folderInfo').style.display = 'none';
+            document.getElementById('batchPreviewArea').style.display = 'none';
+            document.getElementById('batchConfirmBtn').disabled = true;
+        }
+
+        async function parseFolderUpload(platformId, category) {
+            const subfolders = Object.entries(selectedFolderFiles.subfolders);
+            if (subfolders.length === 0) {
+                throw new Error('请先选择素材文件夹');
+            }
+
+            const materials = [];
+            let index = 0;
+
+            for (const [subfolderName, data] of subfolders) {
+                index++;
+
+                // Parse docx file for content
+                let title = '';
+                let content = '';
+                let topics = '';
+                let topicsLines = [];
+                let contentLines = [];
+
+                if (data.docs.length > 0) {
+                    try {
+                        const docFile = data.docs[0]; // Use first docx file
+                        const arrayBuffer = await docFile.arrayBuffer();
+                        const result = await mammoth.extractRawText({ arrayBuffer });
+                        const text = result.value.trim();
+
+                        if (text) {
+                            const lines = text.split('\n').filter(l => l.trim());
+                            let titleLineIndex = -1;
+
+                            // === PASS 1: Find labeled title ===
+                            for (let i = 0; i < lines.length; i++) {
+                                const line = lines[i].trim();
+                                if (/^标题[：:]\s*/.test(line)) {
+                                    title = line.replace(/^标题[：:]\s*/, '').trim();
+                                    titleLineIndex = i;
+                                    break;
+                                }
+                            }
+
+                            // === PASS 2: Process all lines ===
+                            for (let i = 0; i < lines.length; i++) {
+                                if (i === titleLineIndex) continue;
+                                const line = lines[i].trim();
+                                if (!line) continue;
+
+                                if (/^(必加)?话题[：:]\s*/.test(line)) {
+                                    topicsLines.push(line.replace(/^(必加)?话题[：:]\s*/, '').trim());
+                                    continue;
+                                }
+                                if (/^[#＃]/.test(line) && !line.includes('：') && !line.includes(':')) {
+                                    topicsLines.push(line);
+                                    continue;
+                                }
+                                if ((line.includes('话题') || line.includes('注意')) &&
+                                    (line.includes('复制') || line.includes('打字') || line.includes('发布') || line.includes('蓝色'))) {
+                                    continue;
+                                }
+                                if (line.startsWith('必加') && line.includes('话题')) {
+                                    continue;
+                                }
+                                contentLines.push(line);
+                            }
+
+                            if (!title && contentLines.length > 0) {
+                                title = contentLines[0];
+                                contentLines = contentLines.slice(1);
+                            }
+
+                            const allTopicsText = topicsLines.join(' ');
+                            const extractedHashtags = allTopicsText.match(/[#＃][^\s#＃，,]+/g) || [];
+                            topics = extractedHashtags.map(t => t.trim()).join('，');
+                            content = contentLines.join('\n').trim();
+                        }
+                    } catch (err) {
+                        console.error('Error parsing docx:', subfolderName, err);
+                    }
+                }
+
+                // Fallback title to subfolder name
+                if (!title) {
+                    title = subfolderName;
+                }
+
+                materials.push({
+                    material_no: `M${Date.now()}-${index}`,
+                    sequence_no: index,
+                    category: category,
+                    title: title.trim(),
+                    content: content.trim(),
+                    topics: topics.trim(),
+                    images: [],
+                    _pendingImages: data.images, // Will upload separately
+                    platform_id: platformId,
+                });
+            }
+            return materials;
+        }
+
+        async function parseBatchUpload() {
+            const platformId = parseInt(document.getElementById('batchPlatform').value);
+            if (!platformId) {
+                showToast('请选择平台', 'error');
+                return;
+            }
+
+            const category = document.getElementById('batchCategory').value;
+            parsedBatchMaterials = [];
+
+            try {
+                if (currentBatchTab === 'excel') {
+                    parsedBatchMaterials = await parseExcelUpload(platformId, category);
+                } else if (currentBatchTab === 'word') {
+                    parsedBatchMaterials = await parseWordUpload(platformId, category);
+                } else if (currentBatchTab === 'folder') {
+                    parsedBatchMaterials = await parseFolderUpload(platformId, category);
+                }
+
+                if (parsedBatchMaterials.length === 0) {
+                    showToast('没有解析到有效素材', 'error');
+                    return;
+                }
+
+                // Show preview
+                displayBatchPreview(parsedBatchMaterials);
+                document.getElementById('batchConfirmBtn').disabled = false;
+            } catch (error) {
+                console.error('Parse error:', error);
+                showToast('解析失败: ' + error.message, 'error');
+            }
+        }
+
+        async function parseExcelUpload(platformId, category) {
+            if (!selectedExcelFile) {
+                throw new Error('请先选择 Excel 文件');
+            }
+
+            const data = await selectedExcelFile.arrayBuffer();
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheetName = workbook.SheetNames[0];
+            const sheet = workbook.Sheets[sheetName];
+            const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+            const materials = [];
+            // Skip header row if exists, start from row 1
+            for (let i = 1; i < jsonData.length; i++) {
+                const row = jsonData[i];
+                if (!row || row.length < 3 || !row[2]) continue; // Skip empty rows, require at least title
+
+                const seqNo = row[0] || i;
+                const direction = row[1] || category || '';  // 方向/赛道
+                let title = (row[2] || '').toString().trim();
+                let content = (row[3] || '').toString().trim();
+                let topics = (row[4] || '').toString().trim();
+                const imageUrl = row[5] || '';
+
+                // === Intelligent parsing: check if title looks like instruction ===
+                if (title && (title.includes('话题') || title.includes('注意') || title.startsWith('必加'))) {
+                    // Title column contains instruction, extract real title from content
+                    const contentLines = content.split('\n');
+                    let extractedTitle = '';
+                    let newContentLines = [];
+
+                    // First pass: find "标题：xxx"
+                    for (let j = 0; j < contentLines.length; j++) {
+                        const line = contentLines[j].trim();
+                        if (/^标题[：:]\s*/.test(line)) {
+                            extractedTitle = line.replace(/^标题[：:]\s*/, '').trim();
+                        } else if (line && !line.startsWith('#') &&
+                            !(line.includes('话题') && (line.includes('复制') || line.includes('打字') || line.includes('发布')))) {
+                            newContentLines.push(line);
+                        }
+                    }
+
+                    // Use extracted title or first content line
+                    if (extractedTitle) {
+                        title = extractedTitle;
+                        content = newContentLines.join('\n').trim();
+                    } else if (newContentLines.length > 0) {
+                        title = newContentLines[0];
+                        content = newContentLines.slice(1).join('\n').trim();
+                    }
+                }
+
+                materials.push({
+                    material_no: `M${Date.now()}-${i}`,
+                    sequence_no: parseInt(seqNo) || i,
+                    category: direction || category,
+                    title: title,
+                    content: content,
+                    topics: topics,
+                    images: imageUrl ? [imageUrl.toString().trim()] : [],
+                    platform_id: platformId,
+                });
+            }
+            return materials;
+        }
+
+        async function parseWordUpload(platformId, category) {
+            if (selectedWordFiles.docs.length === 0) {
+                throw new Error('请先选择 Word 文档');
+            }
+
+            const materials = [];
+
+            for (const docFile of selectedWordFiles.docs) {
+                try {
+                    const arrayBuffer = await docFile.arrayBuffer();
+                    const result = await mammoth.extractRawText({ arrayBuffer });
+                    const text = result.value.trim();
+
+                    if (!text) continue;
+
+                    // Parse content using two-pass approach
+                    const lines = text.split('\n').filter(l => l.trim());
+
+                    let title = '';
+                    let topicsLines = [];
+                    let contentLines = [];
+                    let titleLineIndex = -1;
+
+                    // === PASS 1: Find labeled title (标题：xxx) ===
+                    for (let i = 0; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        if (/^标题[：:]\s*/.test(line)) {
+                            title = line.replace(/^标题[：:]\s*/, '').trim();
+                            titleLineIndex = i;
+                            break;
+                        }
+                    }
+
+                    // === PASS 2: Process all lines ===
+                    for (let i = 0; i < lines.length; i++) {
+                        if (i === titleLineIndex) continue;
+
+                        const line = lines[i].trim();
+                        if (!line) continue;
+
+                        // 话题：xxx or 必加话题：xxx
+                        if (/^(必加)?话题[：:]\s*/.test(line)) {
+                            const topicContent = line.replace(/^(必加)?话题[：:]\s*/, '').trim();
+                            topicsLines.push(topicContent);
+                            continue;
+                        }
+
+                        // Lines that are pure hashtags
+                        if (/^[#＃]/.test(line) && !line.includes('：') && !line.includes(':')) {
+                            topicsLines.push(line);
+                            continue;
+                        }
+
+                        // Skip topic instruction lines
+                        if ((line.includes('话题') || line.includes('注意')) &&
+                            (line.includes('复制') || line.includes('打字') || line.includes('发布') || line.includes('蓝色'))) {
+                            continue;
+                        }
+
+                        // Skip lines starting with "必加" that are instructions
+                        if (line.startsWith('必加') && line.includes('话题')) {
+                            continue;
+                        }
+
+                        // Everything else is content
+                        contentLines.push(line);
+                    }
+
+                    // If no labeled title, use first content line
+                    if (!title && contentLines.length > 0) {
+                        title = contentLines[0];
+                        contentLines = contentLines.slice(1);
+                    }
+
+                    // Fallback to filename
+                    if (!title) {
+                        title = docFile.name.replace(/\.docx?$/i, '');
+                    }
+
+                    // Combine topics
+                    const allTopicsText = topicsLines.join(' ');
+                    const extractedHashtags = allTopicsText.match(/[#＃][^\s#＃，,]+/g) || [];
+                    const topics = extractedHashtags.map(t => t.trim()).join('，');
+
+                    materials.push({
+                        material_no: `M${Date.now()}-${materials.length + 1}`,
+                        sequence_no: materials.length + 1,
+                        category: category,
+                        title: title.trim(),
+                        content: contentLines.join('\n').trim(),
+                        topics: topics.trim(),
+                        images: [],
+                        _pendingImages: selectedWordFiles.images,
+                        platform_id: platformId,
+                    });
+                } catch (err) {
+                    console.error('Error parsing Word file:', docFile.name, err);
+                }
+            }
+            return materials;
+        }
+
+        function parseTextUpload(platformId, category) {
+            const content = document.getElementById('batchContent').value.trim();
+            if (!content) {
+                throw new Error('请输入素材内容');
+            }
+
+            // Split by double newlines (each material block)
+            const materials = content.split(/\n\s*\n/).filter(m => m.trim());
+            return materials.map((text, index) => {
+                const lines = text.trim().split('\n');
+
+                let title = '';
+                let topicsLines = [];
+                let contentLines = [];
+                let titleLineIndex = -1;
+
+                // === PASS 1: Find labeled title (标题：xxx) ===
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (/^标题[：:]\s*/.test(line)) {
+                        title = line.replace(/^标题[：:]\s*/, '').trim();
+                        titleLineIndex = i;
+                        break;
+                    }
+                }
+
+                // === PASS 2: Process all lines ===
+                for (let i = 0; i < lines.length; i++) {
+                    // Skip the title line we already extracted
+                    if (i === titleLineIndex) continue;
+
+                    const line = lines[i].trim();
+                    if (!line) continue;
+
+                    // 话题：xxx or 必加话题：xxx
+                    if (/^(必加)?话题[：:]\s*/.test(line)) {
+                        const topicContent = line.replace(/^(必加)?话题[：:]\s*/, '').trim();
+                        topicsLines.push(topicContent);
+                        continue;
+                    }
+
+                    // Lines that are pure hashtags
+                    if (/^[#＃]/.test(line) && !line.includes('：') && !line.includes(':')) {
+                        topicsLines.push(line);
+                        continue;
+                    }
+
+                    // Lines that look like topic instructions (not actual content)
+                    if ((line.includes('话题') || line.includes('注意')) &&
+                        (line.includes('复制') || line.includes('打字') || line.includes('发布') || line.includes('蓝色'))) {
+                        // Skip instruction lines - don't add to content
+                        continue;
+                    }
+
+                    // Lines starting with "必加" are instructions, skip
+                    if (line.startsWith('必加') && line.includes('话题')) {
+                        continue;
+                    }
+
+                    // Everything else is content
+                    contentLines.push(line);
+                }
+
+                // === If no labeled title, use first content line as title ===
+                if (!title && contentLines.length > 0) {
+                    title = contentLines[0];
+                    contentLines = contentLines.slice(1);
+                }
+
+                // Combine topics, extracting individual hashtags
+                const allTopicsText = topicsLines.join(' ');
+                const extractedHashtags = allTopicsText.match(/[#＃][^\s#＃，,]+/g) || [];
+                const topics = extractedHashtags.map(t => t.trim()).join('，');
+
+                // Final content
+                const contentText = contentLines.join('\n').trim();
+
+                // Fallback title
+                if (!title) {
+                    title = `素材${index + 1}`;
+                }
+
+                return {
+                    material_no: `M${Date.now()}-${index + 1}`,
+                    sequence_no: index + 1,
+                    title: title,
+                    category: category,
+                    content: contentText,
+                    topics: topics,
+                    images: [],
+                    platform_id: platformId,
+                };
+            });
+        }
+
+        function displayBatchPreview(materials) {
+            const previewArea = document.getElementById('batchPreviewArea');
+            const previewList = document.getElementById('batchPreviewList');
+            const countBadge = document.getElementById('batchPreviewCount');
+
+            countBadge.textContent = `${materials.length} 条素材`;
+            previewList.innerHTML = materials.map((m, i) => `
+                <div style="padding: 0.5rem; border-bottom: 1px solid var(--border-color); ${i === materials.length - 1 ? 'border-bottom: none;' : ''}">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <strong style="color: var(--text-primary);">${i + 1}. ${escapeHtml(m.title.substring(0, 50))}${m.title.length > 50 ? '...' : ''}</strong>
+                        <span class="badge badge-muted">${m.category || '未分类'}</span>
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">
+                        ${escapeHtml(m.content.substring(0, 80))}${m.content.length > 80 ? '...' : ''}
+                    </div>
+                    ${m.topics ? `<div style="font-size: 0.75rem; color: var(--primary-color); margin-top: 0.25rem;">${escapeHtml(m.topics.substring(0, 60))}</div>` : ''}
+                    ${m.images && m.images.length > 0 ? `<div style="font-size: 0.75rem; color: var(--success-color); margin-top: 0.25rem;"><i class="fas fa-image"></i> ${m.images.length} 张图片</div>` : ''}
+                    ${m._pendingImages && m._pendingImages.length > 0 ? `<div style="font-size: 0.75rem; color: var(--warning-color); margin-top: 0.25rem;"><i class="fas fa-image"></i> ${m._pendingImages.length} 张待上传图片</div>` : ''}
+                </div>
+            `).join('');
+
+            previewArea.style.display = 'block';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function confirmBatchUpload() {
+            if (parsedBatchMaterials.length === 0) {
+                showToast('请先解析素材', 'error');
+                return;
+            }
+
+            showToast(`正在上传 ${parsedBatchMaterials.length} 条素材...`, 'info');
+            document.getElementById('batchConfirmBtn').disabled = true;
+
+            try {
+                // Upload pending images for Word uploads
+                for (const material of parsedBatchMaterials) {
+                    if (material._pendingImages && material._pendingImages.length > 0) {
+                        const imageUrls = await uploadFilesAndGetUrls(material._pendingImages);
+                        material.images = imageUrls;
+                        delete material._pendingImages;
+                    }
+                }
+
+                const res = await merchantAPI.batchCreateMaterials(parsedBatchMaterials);
+                if (res.code === 200) {
+                    showToast(`成功上传 ${parsedBatchMaterials.length} 条素材`);
+                    closeModal('batchUploadModal');
+                    loadMaterials();
+                    // Reset state
+                    parsedBatchMaterials = [];
+                    clearExcelFile();
+                    clearWordFiles();
+                } else {
+                    showToast(res.message || '批量上传失败', 'error');
+                    document.getElementById('batchConfirmBtn').disabled = false;
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                showToast('上传失败: ' + error.message, 'error');
+                document.getElementById('batchConfirmBtn').disabled = false;
+            }
+        }
+
+        // Legacy function kept for compatibility
+        async function handleBatchUpload() {
+            await parseBatchUpload();
+            if (parsedBatchMaterials.length > 0) {
+                await confirmBatchUpload();
+            }
+        }
+
+        // 发布码
+        let publishCodesData = [];
+
+        async function loadPublishCodes() {
+            const res = await merchantAPI.listPublishCodes();
+            const tbody = document.getElementById('publishCodeList');
+
+            if (res.code === 200 && res.data && res.data.length > 0) {
+                publishCodesData = res.data;
+                tbody.innerHTML = res.data.map((c, index) => {
+                    const materialLink = c.material
+                        ? `<a href="javascript:void(0)" onclick="navigateToMaterialEdit(${c.material_id})" style="color: var(--primary-color); cursor: pointer;">${c.material.title}</a>`
+                        : '-';
+                    const qrCodeId = `qrcode-${c.id}`;
+                    return `
+          <tr data-publish-code="${c.code}" data-material-title="${c.material?.title || 'none'}">
+            <td>
+              <code style="background: var(--bg-tertiary); padding: 4px 8px; border-radius: 4px;">${c.code}</code>
+              <button class="btn btn-sm btn-outline" onclick="copyPublishLink('${c.code}')" title="复制链接" style="margin-left: 8px;">
+                <i class="fas fa-copy"></i>
+              </button>
+            </td>
+            <td>${c.project_name || '-'}</td>
+            <td><span class="platform-icon">小</span> ${c.platform?.name || '小红书'}</td>
+            <td>${materialLink}</td>
+            <td><div id="${qrCodeId}" class="qrcode-cell" style="width: 60px; height: 60px;"></div></td>
+            <td>${c.scan_count} / ${c.max_scans}</td>
+            <td>${getStatusBadge(c.status)}</td>
+            <td>${formatDate(c.created_at)}</td>
+            <td>
+              <button class="btn btn-sm btn-primary" onclick="openPublishLink('${c.code}')" title="一键发布">
+                <i class="fas fa-rocket"></i> 一键发布
+              </button>
+              <button class="btn btn-sm btn-outline" onclick="downloadSingleQRCode('${c.code}', '${c.project_name || ''}', '${c.material?.title || ''}')" title="下载二维码" style="margin-left: 4px;">
+                <i class="fas fa-download"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+                }).join('');
+
+                // Generate QR codes for each publish code
+                setTimeout(() => {
+                    res.data.forEach(c => {
+                        const qrContainer = document.getElementById(`qrcode-${c.id}`);
+                        if (qrContainer && typeof QRCode !== 'undefined') {
+                            qrContainer.innerHTML = '';
+                            new QRCode(qrContainer, {
+                                text: `${window.location.origin}/p/${c.code}`,
+                                width: 60,
+                                height: 60,
+                                colorDark: '#000000',
+                                colorLight: '#ffffff',
+                                correctLevel: QRCode.CorrectLevel.M
+                            });
+                        }
+                    });
+                }, 100);
+            } else {
+                publishCodesData = [];
+                tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><i class="fas fa-qrcode"></i><h3>暂无发布码</h3></div></td></tr>';
+            }
+        }
+
+        function copyPublishLink(code) {
+            const link = `${window.location.origin}/p/${code}`;
+            navigator.clipboard.writeText(link).then(() => {
+                showToast('链接已复制到剪贴板');
+            }).catch(() => {
+                // Fallback for older browsers
+                const input = document.createElement('input');
+                input.value = link;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+                showToast('链接已复制到剪贴板');
+            });
+        }
+
+        function openPublishLink(code) {
+            window.open(`/p/${code}?preview=1`, '_blank');
+        }
+
+        async function downloadSingleQRCode(code, projectName, materialTitle) {
+            const publishLink = `${window.location.origin}/p/${code}`;
+
+            // Try to get existing QR canvas first
+            let canvas = document.querySelector(`tr[data-publish-code="${code}"] .qrcode-cell canvas`);
+
+            // If no canvas exists, generate QR code on-demand
+            if (!canvas) {
+                // Create a temporary container and generate QR code
+                const tempDiv = document.createElement('div');
+                tempDiv.style.position = 'absolute';
+                tempDiv.style.left = '-9999px';
+                document.body.appendChild(tempDiv);
+
+                try {
+                    // Generate QR code synchronously (QRCode library)
+                    if (typeof QRCode === 'undefined') {
+                        showToast('QRCode库未加载，请刷新页面', 'error');
+                        return;
+                    }
+
+                    new QRCode(tempDiv, {
+                        text: publishLink,
+                        width: 200,
+                        height: 200,
+                        colorDark: '#000000',
+                        colorLight: '#ffffff',
+                        correctLevel: QRCode.CorrectLevel.M
+                    });
+
+                    // Wait for canvas to be created
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    canvas = tempDiv.querySelector('canvas');
+
+                    if (!canvas) {
+                        showToast('二维码生成失败', 'error');
+                        document.body.removeChild(tempDiv);
+                        return;
+                    }
+                } catch (e) {
+                    console.error('QR generation failed:', e);
+                    showToast('二维码生成失败', 'error');
+                    return;
+                }
+
+                // Clean up temp div after download
+                setTimeout(() => document.body.removeChild(tempDiv), 500);
+            }
+
+            // Create download filename: 项目名_素材名_发布码.png
+            let filename = '';
+            if (projectName && projectName !== '-') {
+                filename += projectName;
+            }
+            if (materialTitle && materialTitle !== 'none' && materialTitle !== '-') {
+                filename += (filename ? '_' : '') + materialTitle;
+            }
+            filename += (filename ? '_' : '') + code + '.png';
+            filename = filename.replace(/[^\w\u4e00-\u9fa5_-]/g, '_');
+
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showToast('二维码已下载');
+        }
+
+        async function batchDownloadQRCodes() {
+            if (publishCodesData.length === 0) {
+                showToast('暂无发布码可下载', 'error');
+                return;
+            }
+
+            if (typeof JSZip === 'undefined') {
+                showToast('JSZip库加载失败', 'error');
+                return;
+            }
+
+            if (typeof QRCode === 'undefined') {
+                showToast('QRCode库加载失败', 'error');
+                return;
+            }
+
+            showToast('正在生成二维码并打包...', 'info');
+
+            const zip = new JSZip();
+            const folder = zip.folder('qrcodes');
+
+            // Create a temporary container for QR generation
+            const tempContainer = document.createElement('div');
+            tempContainer.style.position = 'absolute';
+            tempContainer.style.left = '-9999px';
+            document.body.appendChild(tempContainer);
+
+            for (const c of publishCodesData) {
+                const publishLink = `${window.location.origin}/p/${c.code}`;
+
+                // Try to get existing QR canvas first
+                let canvas = document.querySelector(`#qrcode-${c.id} canvas`);
+
+                // If no canvas exists, generate QR code on-demand
+                if (!canvas) {
+                    const qrDiv = document.createElement('div');
+                    tempContainer.appendChild(qrDiv);
+
+                    try {
+                        new QRCode(qrDiv, {
+                            text: publishLink,
+                            width: 200,
+                            height: 200,
+                            colorDark: '#000000',
+                            colorLight: '#ffffff',
+                            correctLevel: QRCode.CorrectLevel.M
+                        });
+
+                        // Wait for canvas to be created
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                        canvas = qrDiv.querySelector('canvas');
+                    } catch (e) {
+                        console.error('QR generation failed for', c.code, e);
+                    }
+                }
+
+                if (canvas) {
+                    let filename = '';
+                    if (c.project_name) {
+                        filename += c.project_name;
+                    }
+                    if (c.material?.title) {
+                        filename += (filename ? '_' : '') + c.material.title;
+                    }
+                    filename += (filename ? '_' : '') + c.code + '.png';
+                    filename = filename.replace(/[^\w\u4e00-\u9fa5_-]/g, '_');
+
+                    const dataURL = canvas.toDataURL('image/png');
+                    const base64Data = dataURL.replace(/^data:image\/(png|jpg);base64,/, '');
+                    folder.file(filename, base64Data, { base64: true });
+                }
+            }
+
+            // Clean up temp container
+            document.body.removeChild(tempContainer);
+
+            try {
+                const content = await zip.generateAsync({ type: 'blob' });
+                const link = document.createElement('a');
+                link.download = '发布码二维码_' + new Date().toISOString().split('T')[0] + '.zip';
+                link.href = URL.createObjectURL(content);
+                link.click();
+                showToast('二维码包已下载');
+            } catch (e) {
+                showToast('打包失败: ' + e.message, 'error');
+            }
+        }
+
+        function showAddPublishCodeModal() {
+            document.getElementById('addPublishCodeModal').classList.add('active');
+        }
+
+        async function handleAddPublishCode(e) {
+            e.preventDefault();
+
+            const platformId = parseInt(document.getElementById('newCodePlatform').value);
+            if (!platformId || isNaN(platformId)) {
+                showToast('请选择目标平台', 'error');
+                return;
+            }
+
+            const materialId = parseInt(document.getElementById('newCodeMaterial').value) || 0;
+
+            const data = {
+                platform_id: platformId,
+                material_id: materialId,
+                project_name: document.getElementById('newCodeProjectName').value || '',
+                max_scans: parseInt(document.getElementById('newCodeMaxScans').value) || 1,
+                expire_days: parseInt(document.getElementById('newCodeExpireDays').value) || 7,
+            };
+
+            const res = await merchantAPI.createPublishCode(data);
+            if (res.code === 200) {
+                showToast('发布码生成成功');
+                closeModal('addPublishCodeModal');
+                loadPublishCodes();
+            } else {
+                showToast(res.message || '生成失败', 'error');
+            }
+        }
+
+        // 任务管理
+        async function loadTasks() {
+            const res = await merchantAPI.listTasks();
+            const tbody = document.getElementById('taskList');
+
+            if (res.code === 200 && res.data && res.data.length > 0) {
+                tbody.innerHTML = res.data.map(t => `
+          <tr>
+            <td><strong>${t.project_name}</strong></td>
+            <td>${t.platform?.name || '小红书'}</td>
+            <td class="amount amount-positive">${formatMoney(t.unit_price)}</td>
+            <td>${t.validity_days}天</td>
+            <td>${t.completed_count} / ${t.total_count || '∞'}</td>
+            <td>${getStatusBadge(t.status)}</td>
+            <td>${formatDate(t.created_at)}</td>
+          </tr>
+        `).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><i class="fas fa-tasks"></i><h3>暂无任务</h3></div></td></tr>';
+            }
+        }
+
+        function showAddTaskModal() {
+            document.getElementById('addTaskModal').classList.add('active');
+        }
+
+        async function handleAddTask(e) {
+            e.preventDefault();
+            const data = {
+                platform_id: parseInt(document.getElementById('newTaskPlatform').value),
+                project_name: document.getElementById('newTaskName').value,
+                team_group: document.getElementById('newTaskGroup').value,
+                description: document.getElementById('newTaskDesc').value,
+                unit_price: parseFloat(document.getElementById('newTaskPrice').value),
+                team_leader_price: parseFloat(document.getElementById('newTaskLeaderPrice').value) || 0,
+                bonus_price: parseFloat(document.getElementById('newTaskBonus').value) || 0,
+                validity_days: parseInt(document.getElementById('newTaskValidity').value) || 30,
+            };
+
+            const res = await merchantAPI.createTask(data);
+            if (res.code === 200) {
+                showToast('任务发布成功');
+                closeModal('addTaskModal');
+                loadTasks();
+                loadStats();
+            } else {
+                showToast(res.message || '发布失败', 'error');
+            }
+        }
+
+        // 审核管理
+        async function loadSubmissions() {
+            const res = await merchantAPI.listSubmissions({ status: currentSubmissionFilter });
+            const tbody = document.getElementById('submissionList');
+
+            if (res.code === 200 && res.data.list && res.data.list.length > 0) {
+                tbody.innerHTML = res.data.list.map(s => `
+          <tr>
+            <td>${s.user?.nickname || s.user?.username || '-'}</td>
+            <td>${s.task?.project_name || '-'}</td>
+            <td>
+              <a href="${s.publish_link}" target="_blank" style="display: inline-block; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                ${s.publish_link}
+              </a>
+            </td>
+            <td>${s.likes_count}</td>
+            <td>${s.link_valid ? '<span class="badge badge-success">有效</span>' : '<span class="badge badge-danger">失效</span>'}</td>
+            <td>${getStatusBadge(s.status)}</td>
+            <td>${formatDate(s.created_at)}</td>
+            <td>
+              ${s.status === 'pending' ? `
+                <button class="btn btn-sm btn-primary" onclick="showReviewModal(${s.id}, '${s.publish_link}')">审核</button>
+              ` : ''}
+              <button class="btn btn-sm btn-info" onclick="fetchLinkInfo('${s.publish_link}')" title="获取链接信息" style="margin-left: 4px;"><i class="fas fa-chart-bar"></i></button>
+              <button class="btn btn-sm btn-outline" onclick="checkLink(${s.id})" style="margin-left: 4px;"><i class="fas fa-sync"></i></button>
+            </td>
+          </tr>
+        `).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><i class="fas fa-clipboard-check"></i><h3>暂无提交</h3></div></td></tr>';
+            }
+        }
+
+        function filterSubmissions(status) {
+            currentSubmissionFilter = status;
+            document.querySelectorAll('#submissionsSection .tab').forEach((tab, i) => {
+                tab.classList.toggle('active',
+                    (status === '' && i === 0) ||
+                    (status === 'pending' && i === 1) ||
+                    (status === 'approved' && i === 2) ||
+                    (status === 'rejected' && i === 3)
+                );
+            });
+            loadSubmissions();
+        }
+
+        function showReviewModal(id, link) {
+            document.getElementById('reviewSubmissionId').value = id;
+            document.getElementById('reviewLink').href = link;
+            document.getElementById('reviewLink').textContent = link;
+            document.getElementById('reviewRejectReason').value = '';
+            document.getElementById('reviewModal').classList.add('active');
+        }
+
+        async function submitReview(status) {
+            const id = document.getElementById('reviewSubmissionId').value;
+            const data = {
+                status,
+                reject_reason: document.getElementById('reviewRejectReason').value
+            };
+
+            const res = await merchantAPI.reviewSubmission(id, data);
+            if (res.code === 200) {
+                showToast(status === 'approved' ? '已通过' : '已驳回');
+                closeModal('reviewModal');
+                loadSubmissions();
+                loadStats();
+            } else {
+                showToast(res.message || '操作失败', 'error');
+            }
+        }
+
+        async function checkLink(id) {
+            showToast('正在检查链接...', 'info');
+            const res = await merchantAPI.checkLink(id);
+            if (res.code === 200) {
+                const isValid = res.data.is_valid;
+                const responseCode = res.data.response_code || 0;
+                const errorMsg = res.data.error_message || '';
+
+                if (isValid) {
+                    showToast(`✓ 链接有效，点赞数：${res.data.likes_count}，HTTP ${responseCode}`);
+                } else {
+                    showToast(`✗ 链接已失效：${errorMsg}`, 'error');
+                }
+                loadSubmissions();
+            } else {
+                showToast(res.message || '检查失败', 'error');
+            }
+        }
+
+        // 获取链接详细信息
+        async function fetchLinkInfo(link) {
+            showToast('正在获取链接信息...', 'info');
+            try {
+                const res = await post('/merchant/link-info', { link });
+                if (res.code === 200 && res.data) {
+                    const data = res.data;
+                    const statusText = data.is_valid ? '✅ 链接有效' : '❌ 链接无效';
+                    const httpStatus = data.http_code ? `HTTP ${data.http_code}` : '';
+
+                    // 创建弹窗显示结果
+                    const modalHtml = `
+                        <div class="modal-overlay active" id="linkInfoModal" onclick="if(event.target===this) closeModal('linkInfoModal')">
+                            <div class="modal" style="max-width: 450px;">
+                                <div class="modal-header">
+                                    <h3 class="modal-title"><i class="fas fa-chart-bar"></i> 链接信息</h3>
+                                    <button class="modal-close" onclick="closeModal('linkInfoModal')"><i class="fas fa-times"></i></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div style="padding: 1rem; background: ${data.is_valid ? 'var(--success-color)' : 'var(--danger-color)'}; color: white; border-radius: var(--radius-md); text-align: center; margin-bottom: 1rem;">
+                                        <div style="font-size: 1.25rem; font-weight: 600;">${statusText}</div>
+                                        <div style="font-size: 0.875rem; opacity: 0.8;">${httpStatus}</div>
+                                    </div>
+                                    
+                                    ${data.title ? `<div style="margin-bottom: 1rem;"><span style="color: var(--text-muted); font-size: 0.875rem;">标题</span><div style="font-weight: 600;">${data.title}</div></div>` : ''}
+                                    ${data.author ? `<div style="margin-bottom: 1rem;"><span style="color: var(--text-muted); font-size: 0.875rem;">作者</span><div style="font-weight: 600;">${data.author}</div></div>` : ''}
+                                    
+                                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 1rem;">
+                                        <div style="text-align: center; padding: 1rem; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+                                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary-color);"><i class="fas fa-heart"></i> ${data.likes || 0}</div>
+                                            <div style="font-size: 0.75rem; color: var(--text-muted);">点赞数</div>
+                                        </div>
+                                        <div style="text-align: center; padding: 1rem; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+                                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--info-color);"><i class="fas fa-comment"></i> ${data.comments || 0}</div>
+                                            <div style="font-size: 0.75rem; color: var(--text-muted);">评论数</div>
+                                        </div>
+                                        <div style="text-align: center; padding: 1rem; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+                                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--warning-color);"><i class="fas fa-star"></i> ${data.collects || 0}</div>
+                                            <div style="font-size: 0.75rem; color: var(--text-muted);">收藏数</div>
+                                        </div>
+                                        <div style="text-align: center; padding: 1rem; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+                                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--success-color);"><i class="fas fa-share"></i> ${data.shares || 0}</div>
+                                            <div style="font-size: 0.75rem; color: var(--text-muted);">分享数</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div style="margin-top: 1rem; font-size: 0.75rem; color: var(--text-muted); word-break: break-all;">
+                                        <i class="fas fa-link"></i> ${link}
+                                    </div>
+                                    
+                                    ${!data.success && data.error ? `<div style="margin-top: 1rem; padding: 0.75rem; background: rgba(244, 67, 54, 0.1); border-radius: var(--radius-sm); color: var(--danger-color); font-size: 0.875rem;"><i class="fas fa-exclamation-triangle"></i> ${data.error}</div>` : ''}
+                                    
+                                    <p style="margin-top: 1rem; font-size: 0.75rem; color: var(--text-muted); text-align: center;">
+                                        <i class="fas fa-info-circle"></i> 注意：小红书需要登录才能获取完整数据，部分数据可能无法获取
+                                    </p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button class="btn btn-secondary" onclick="closeModal('linkInfoModal')">关闭</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    // 移除旧弹窗
+                    const oldModal = document.getElementById('linkInfoModal');
+                    if (oldModal) oldModal.remove();
+
+                    // 添加新弹窗
+                    document.body.insertAdjacentHTML('beforeend', modalHtml);
+                } else {
+                    showToast('获取链接信息失败：' + (res.message || '未知错误'), 'error');
+                }
+            } catch (error) {
+                console.error('Fetch link info error:', error);
+                showToast('获取链接信息失败：' + error.message, 'error');
+            }
+        }
+
+        // 用户管理
+        async function loadUsers() {
+            const res = await merchantAPI.listUsers();
+            const tbody = document.getElementById('userList');
+
+            if (res.code === 200 && res.data && res.data.length > 0) {
+                tbody.innerHTML = res.data.map(u => `
+          <tr>
+            <td>${u.id}</td>
+            <td><strong>${u.username}</strong></td>
+            <td>${u.nickname || '-'}</td>
+            <td>${u.submission_count}</td>
+            <td class="amount">${formatMoney(u.balance)}</td>
+            <td>${getStatusBadge(u.status)}</td>
+            <td>${formatDate(u.created_at)}</td>
+            <td>
+              <button class="btn btn-sm ${u.status === 'blocked' ? 'btn-success' : 'btn-danger'}" onclick="toggleBlock(${u.id}, ${u.status !== 'blocked'})">
+                ${u.status === 'blocked' ? '解禁' : '拉黑'}
+              </button>
+            </td>
+          </tr>
+        `).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><i class="fas fa-users"></i><h3>暂无用户</h3></div></td></tr>';
+            }
+        }
+
+        async function toggleBlock(id, block) {
+            if (!confirm(block ? '确定要拉黑该用户吗？' : '确定要解禁该用户吗？')) return;
+
+            const res = await merchantAPI.blockUser(id, block);
+            if (res.code === 200) {
+                showToast(block ? '已拉黑' : '已解禁');
+                loadUsers();
+            }
+        }
+
+        // 提现管理
+        async function loadWithdrawals() {
+            const res = await merchantAPI.listWithdrawals({ status: currentWithdrawalFilter });
+            const tbody = document.getElementById('withdrawalList');
+
+            if (res.code === 200 && res.data && res.data.length > 0) {
+                tbody.innerHTML = res.data.map(w => `
+          <tr>
+            <td>${w.user?.nickname || w.user?.username || '-'}</td>
+            <td class="amount amount-negative">${formatMoney(w.amount)}</td>
+            <td>${w.payment_account || '-'}</td>
+            <td>
+              ${w.payment_qrcode ? `<button class="btn btn-sm btn-outline" onclick="showPaymentQRCode('${w.payment_qrcode}')"><i class="fas fa-qrcode"></i> 收款码</button>` : '<span class="badge badge-secondary">无</span>'}
+            </td>
+            <td>${getStatusBadge(w.status)}</td>
+            <td>${formatDate(w.created_at)}</td>
+            <td>
+              ${w.status === 'pending' ? `
+                <button class="btn btn-sm btn-success" onclick="processWithdraw(${w.id}, 'approved')"><i class="fas fa-check"></i> 通过</button>
+                <button class="btn btn-sm btn-danger" onclick="showRejectModal(${w.id})"><i class="fas fa-times"></i> 拒绝</button>
+              ` : w.status === 'approved' ? `
+                <button class="btn btn-sm btn-primary" onclick="showPaymentConfirmModal(${w.id}, '${w.payment_qrcode || ''}', ${w.amount}, '${w.payment_method || 'alipay'}', '${w.payment_account || ''}')"><i class="fas fa-money-bill"></i> 打款</button>
+              ` : '-'}
+            </td>
+          </tr>
+        `).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><i class="fas fa-money-bill-wave"></i><h3>暂无提现申请</h3></div></td></tr>';
+            }
+        }
+
+        // 显示收款码模态框
+        function showPaymentQRCode(qrcodeUrl) {
+            if (!qrcodeUrl) {
+                showToast('用户未上传收款码', 'error');
+                return;
+            }
+            document.getElementById('withdrawQRCodeImage').src = qrcodeUrl;
+            document.getElementById('withdrawQRCodeModal').classList.add('active');
+        }
+
+        // 显示打款确认模态框
+        function showPaymentConfirmModal(id, qrcodeUrl, amount, paymentMethod, paymentAccount) {
+            document.getElementById('payConfirmWithdrawalId').value = id;
+            document.getElementById('payConfirmAmount').textContent = '¥' + parseFloat(amount).toFixed(2);
+            document.getElementById('payConfirmMethod').textContent = paymentMethod === 'wechat' ? '微信' : '支付宝';
+            document.getElementById('payConfirmAccount').textContent = paymentAccount || '-';
+
+            const qrArea = document.getElementById('payConfirmQRCodeArea');
+            if (qrcodeUrl) {
+                document.getElementById('payConfirmQRCode').src = qrcodeUrl;
+                qrArea.style.display = 'block';
+            } else {
+                qrArea.style.display = 'none';
+            }
+            document.getElementById('paymentConfirmModal').classList.add('active');
+        }
+
+        // 确认打款
+        async function confirmPayment() {
+            const id = document.getElementById('payConfirmWithdrawalId').value;
+            const res = await merchantAPI.processWithdrawal(id, { status: 'paid' });
+            if (res.code === 200) {
+                showToast('打款确认成功');
+                closeModal('paymentConfirmModal');
+                loadWithdrawals();
+            } else {
+                showToast(res.message || '操作失败', 'error');
+            }
+        }
+
+        // 显示拒绝模态框
+        function showRejectModal(id) {
+            document.getElementById('rejectWithdrawalId').value = id;
+            document.getElementById('rejectReason').value = '';
+            document.getElementById('rejectModal').classList.add('active');
+        }
+
+        // 确认拒绝
+        async function confirmReject() {
+            const id = document.getElementById('rejectWithdrawalId').value;
+            const reason = document.getElementById('rejectReason').value;
+            const res = await merchantAPI.processWithdrawal(id, { status: 'rejected', reject_reason: reason });
+            if (res.code === 200) {
+                showToast('已拒绝该提现申请');
+                closeModal('rejectModal');
+                loadWithdrawals();
+            } else {
+                showToast(res.message || '操作失败', 'error');
+            }
+        }
+
+        function filterWithdrawals(status) {
+            currentWithdrawalFilter = status;
+            document.querySelectorAll('#withdrawalsSection .tab').forEach((tab, i) => {
+                tab.classList.toggle('active',
+                    (status === '' && i === 0) || (status === 'pending' && i === 1) || (status === 'approved' && i === 2) || (status === 'paid' && i === 3)
+                );
+            });
+            loadWithdrawals();
+        }
+
+        async function processWithdraw(id, status) {
+            const action = status === 'approved' ? '通过审核' : status === 'rejected' ? '拒绝' : '确认打款';
+            if (!confirm(`确定要${action}此提现申请？`)) return;
+
+            const res = await merchantAPI.processWithdrawal(id, { status });
+            if (res.code === 200) {
+                showToast(`已${action}`);
+                loadWithdrawals();
+            } else {
+                showToast(res.message || '操作失败', 'error');
+            }
+        }
+
+        // ========== 订单管理 ==========
+        async function loadOrders() {
+            // 加载订单统计
+            const statsRes = await get('/merchant/orders/stats');
+            if (statsRes.code === 200) {
+                document.getElementById('totalOrders').textContent = statsRes.data.total_orders || 0;
+                document.getElementById('completedOrders').textContent = statsRes.data.completed_orders || 0;
+                document.getElementById('totalOrderAmount').textContent = '¥' + (statsRes.data.total_amount || 0).toFixed(2);
+                document.getElementById('totalOrderCommission').textContent = '¥' + (statsRes.data.total_commission || 0).toFixed(2);
+            }
+
+            // 加载订单列表
+            const res = await get('/merchant/orders');
+            const tbody = document.getElementById('orderList');
+            if (res.code === 200 && res.data.list && res.data.list.length > 0) {
+                tbody.innerHTML = res.data.list.map(o => `
+                    <tr>
+                        <td>${o.id}</td>
+                        <td>${o.user?.nickname || o.user?.username || '-'}</td>
+                        <td>${o.order_type === 'task_reward' ? '任务奖励' : o.order_type === 'commission' ? '佣金' : o.order_type}</td>
+                        <td class="amount">${formatMoney(o.amount)}</td>
+                        <td>${getStatusBadge(o.status)}</td>
+                        <td>${formatDate(o.created_at)}</td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><i class="fas fa-shopping-cart"></i><h3>暂无订单</h3></div></td></tr>';
+            }
+        }
+
+        // ========== 分销管理 ==========
+        async function loadDistribution() {
+            // 加载分销统计
+            const statsRes = await get('/merchant/distribution/stats');
+            if (statsRes.code === 200) {
+                document.getElementById('totalInvitees').textContent = statsRes.data.total_invitees || 0;
+                document.getElementById('activeInvitees').textContent = statsRes.data.active_invitees || 0;
+                document.getElementById('totalDistCommission').textContent = '¥' + (statsRes.data.total_commission || 0).toFixed(2);
+                document.getElementById('paidDistCommission').textContent = '¥' + (statsRes.data.paid_commission || 0).toFixed(2);
+                document.getElementById('level1Commission').textContent = '¥' + (statsRes.data.level1_commission || 0).toFixed(2);
+                document.getElementById('level2Commission').textContent = '¥' + (statsRes.data.level2_commission || 0).toFixed(2);
+            }
+
+            // 加载邀请记录
+            const res = await get('/merchant/invitations');
+            const tbody = document.getElementById('invitationList');
+            if (res.code === 200 && res.data.list && res.data.list.length > 0) {
+                tbody.innerHTML = res.data.list.map(i => `
+                    <tr>
+                        <td><strong>${i.inviter_name || '-'}</strong></td>
+                        <td>${i.invitee_name || '-'}</td>
+                        <td><span class="badge badge-success">${i.invitee_submissions || 0}</span></td>
+                        <td><span class="badge badge-secondary">${i.invitee_sub_count || 0}</span></td>
+                        <td class="amount amount-positive">¥${(i.commission_earned || 0).toFixed(2)}</td>
+                        <td>${formatDate(i.created_at)}</td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><i class="fas fa-sitemap"></i><h3>暂无邀请记录</h3></div></td></tr>';
+            }
+        }
+
+        // ========== 系统设置 ==========
+        async function loadSettings() {
+            const res = await get('/merchant/config');
+            if (res.code === 200) {
+                const cfg = res.data || {};
+                document.getElementById('configCommissionRate').value = cfg.commission_rate || 10;
+                document.getElementById('configMinWithdraw').value = cfg.min_withdraw || 10;
+                document.getElementById('configWithdrawFee').value = cfg.withdraw_fee || 0;
+                document.getElementById('configAutoReviewDays').value = cfg.auto_review_days || 7;
+                document.getElementById('configLinkCheckInterval').value = cfg.link_check_interval || 1;
+            }
+        }
+
+        async function saveConfig(key) {
+            let value = '';
+            if (key === 'commission_rate') {
+                value = document.getElementById('configCommissionRate').value;
+            } else if (key === 'auto_review_days') {
+                value = document.getElementById('configAutoReviewDays').value;
+            } else if (key === 'link_check_interval') {
+                value = document.getElementById('configLinkCheckInterval').value;
+            }
+            const res = await put('/merchant/config', { key, value });
+            if (res.code === 200) {
+                showToast('配置保存成功');
+            } else {
+                showToast(res.message || '保存失败', 'error');
+            }
+        }
+
+        async function saveWithdrawConfig() {
+            const minWithdraw = document.getElementById('configMinWithdraw').value;
+            const withdrawFee = document.getElementById('configWithdrawFee').value;
+
+            const res1 = await put('/merchant/config', { key: 'min_withdraw', value: minWithdraw });
+            const res2 = await put('/merchant/config', { key: 'withdraw_fee', value: withdrawFee });
+
+            if (res1.code === 200 && res2.code === 200) {
+                showToast('提现设置保存成功');
+            } else {
+                showToast('保存失败', 'error');
+            }
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        // ========== 推广海报管理 ==========
+        function loadPromoPosters() {
+            const posters = JSON.parse(localStorage.getItem('promoPosters') || '[]');
+            const container = document.getElementById('posterList');
+
+            if (posters.length === 0) {
+                container.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 2rem; grid-column: 1/-1;"><i class="fas fa-image" style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i>暂无海报，请上传推广海报</div>';
+                return;
+            }
+
+            container.innerHTML = posters.map((poster, index) => `
+                <div class="poster-item" style="position: relative; border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-md); background: white;">
+                    <img src="${poster}" alt="推广海报 ${index + 1}" style="width: 100%; aspect-ratio: 9/16; object-fit: cover; display: block;">
+                    <div style="position: absolute; top: 0.5rem; right: 0.5rem; display: flex; gap: 0.25rem;">
+                        <span style="background: var(--primary-color); color: white; padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); font-size: 0.75rem;">${index + 1}</span>
+                        <button onclick="removePoster(${index})" 
+                            style="width: 24px; height: 24px; border-radius: 50%; border: none; background: rgba(239, 68, 68, 0.9); color: white; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-times" style="font-size: 0.625rem;"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function handlePosterUpload(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+
+            const posters = JSON.parse(localStorage.getItem('promoPosters') || '[]');
+
+            for (const file of files) {
+                if (!file.type.startsWith('image/')) {
+                    showToast('请选择图片文件', 'error');
+                    continue;
+                }
+
+                try {
+                    // 上传文件到服务器
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    const response = await fetch('/api/upload', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer ' + getToken()
+                        },
+                        body: formData
+                    });
+
+                    const res = await response.json();
+                    if (res.code === 200 && res.data.url) {
+                        posters.push(res.data.url);
+                    } else {
+                        // 如果上传失败，使用 base64 作为备用
+                        const reader = new FileReader();
+                        await new Promise((resolve) => {
+                            reader.onload = (e) => {
+                                posters.push(e.target.result);
+                                resolve();
+                            };
+                            reader.readAsDataURL(file);
+                        });
+                    }
+                } catch (error) {
+                    // 使用 base64 作为备用
+                    const reader = new FileReader();
+                    await new Promise((resolve) => {
+                        reader.onload = (e) => {
+                            posters.push(e.target.result);
+                            resolve();
+                        };
+                        reader.readAsDataURL(file);
+                    });
+                }
+            }
+
+            localStorage.setItem('promoPosters', JSON.stringify(posters));
+            loadPromoPosters();
+            showToast(`成功添加 ${files.length} 张海报`);
+            event.target.value = '';
+        }
+
+        function removePoster(index) {
+            if (!confirm('确定要删除这张海报吗？')) return;
+
+            const posters = JSON.parse(localStorage.getItem('promoPosters') || '[]');
+            posters.splice(index, 1);
+            localStorage.setItem('promoPosters', JSON.stringify(posters));
+            loadPromoPosters();
+            showToast('海报已删除');
+        }
+    </script>
+</body>
+
+</html>

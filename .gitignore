@@ -1,0 +1,25 @@
+# ===== 密钥与运行期数据（绝不入库）=====
+deploy/.env
+.env
+deploy/mysql_data/
+deploy/uploads/
+backend/uploads/
+
+# ===== 编译产物 =====
+*.exe
+*.test
+*.out
+backend/dist/
+
+# ===== 依赖缓存 =====
+**/node_modules/
+
+# ===== 无关大文件 / 资料目录（精简部署仓库）=====
+需求/
+1.19测评贴20条（旧）/
+
+# ===== 工具与杂项 =====
+.claude/
+*.log
+.DS_Store
+Thumbs.db
