@@ -55,6 +55,11 @@
                         <div class="user-name" id="userName">用户</div>
                         <div class="user-role">普通用户</div>
                     </div>
+                    <button class="btn btn-sm btn-outline" onclick="openNotificationPanel()" title="消息通知"
+                        style="position: relative;">
+                        <i class="fas fa-bell"></i>
+                        <span id="notificationBadge" style="display: none; position: absolute; top: -6px; right: -6px; min-width: 16px; height: 16px; padding: 0 4px; background: #ff2442; color: #fff; font-size: 10px; line-height: 16px; text-align: center; border-radius: 8px; font-weight: 600; box-sizing: border-box;">0</span>
+                    </button>
                     <button class="btn btn-sm btn-outline" onclick="logout()" title="退出">
                         <i class="fas fa-sign-out-alt"></i>
                     </button>
@@ -995,6 +1000,9 @@
 
             // 初始化移动端视图
             updateMobileViews();
+
+            // 初始化消息通知未读角标
+            refreshNotificationBadge();
         });
 
         // 监听窗口大小变化
@@ -3202,6 +3210,161 @@
                 showToast('提现申请失败，请稍后重试', 'error');
             }
         }
+
+        // ==================== 消息通知中心 ====================
+        // 刷新顶部铃铛未读角标
+        async function refreshNotificationBadge() {
+            try {
+                const res = await notificationAPI.unreadCount();
+                if (res && res.code === 200) {
+                    const count = (res.data && res.data.unread_count) || 0;
+                    updateNotificationBadge(count);
+                }
+            } catch (e) {
+                console.error('获取未读通知数失败:', e);
+            }
+        }
+
+        // 更新角标显示
+        function updateNotificationBadge(count) {
+            const badge = document.getElementById('notificationBadge');
+            if (!badge) return;
+            const n = Number(count) || 0;
+            if (n > 0) {
+                badge.textContent = n > 99 ? '99+' : String(n);
+                badge.style.display = 'block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        // 打开通知面板弹窗
+        async function openNotificationPanel() {
+            let modal = document.getElementById('notificationPanelModal');
+            if (modal) modal.remove();
+
+            modal = document.createElement('div');
+            modal.id = 'notificationPanelModal';
+            modal.className = 'modal-overlay active';
+            modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+            modal.innerHTML = `
+                <div class="modal" style="max-width: 420px; width: 92%; max-height: 80vh; background: white; border-radius: 16px; padding: 1.25rem; box-shadow: 0 8px 32px rgba(0,0,0,0.18); display: flex; flex-direction: column;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+                        <h3 style="margin: 0; font-size: 1.1rem;"><i class="fas fa-bell" style="color: var(--primary-color); margin-right: 6px;"></i>消息通知</h3>
+                        <div>
+                            <button class="btn btn-sm btn-outline" onclick="markAllNotificationsRead()" style="margin-right: 6px;">全部已读</button>
+                            <button class="btn btn-sm btn-secondary" onclick="closeNotificationPanel()">关闭</button>
+                        </div>
+                    </div>
+                    <div id="notificationListContainer" style="overflow-y: auto; flex: 1; min-height: 80px;">
+                        <div style="text-align: center; color: var(--text-muted); padding: 1.5rem 0;">加载中...</div>
+                    </div>
+                </div>
+            `;
+            modal.onclick = (e) => { if (e.target === modal) closeNotificationPanel(); };
+            document.body.appendChild(modal);
+
+            loadNotificationList();
+        }
+
+        // 关闭通知面板
+        function closeNotificationPanel() {
+            const modal = document.getElementById('notificationPanelModal');
+            if (modal) modal.remove();
+        }
+
+        // 加载通知列表
+        async function loadNotificationList() {
+            const container = document.getElementById('notificationListContainer');
+            if (!container) return;
+            try {
+                const res = await notificationAPI.list({ page: 1, page_size: 20 });
+                if (res && res.code === 200) {
+                    const list = (res.data && res.data.list) || [];
+                    if (typeof res.data.unread_count !== 'undefined') {
+                        updateNotificationBadge(res.data.unread_count);
+                    }
+                    renderNotificationList(list);
+                } else {
+                    container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:1.5rem 0;">加载失败</div>';
+                }
+            } catch (e) {
+                console.error('加载通知列表失败:', e);
+                container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:1.5rem 0;">加载失败，请稍后重试</div>';
+            }
+        }
+
+        // 渲染通知列表
+        function renderNotificationList(list) {
+            const container = document.getElementById('notificationListContainer');
+            if (!container) return;
+            if (!list || list.length === 0) {
+                container.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:2rem 0;"><i class="fas fa-inbox" style="font-size:2rem;display:block;margin-bottom:0.5rem;opacity:0.4;"></i>暂无通知</div>';
+                return;
+            }
+            container.innerHTML = list.map(item => {
+                const unread = !item.is_read;
+                const safeTitle = escapeNotificationHtml(item.title || '通知');
+                const safeContent = escapeNotificationHtml(item.content || '');
+                const timeStr = item.created_at ? formatDate(item.created_at) : '';
+                return `
+                    <div onclick="onNotificationClick(${item.id})" style="cursor: pointer; padding: 0.75rem; margin-bottom: 0.5rem; border-radius: 12px; background: ${unread ? 'rgba(255,36,66,0.06)' : '#f7f7f7'}; border: 1px solid ${unread ? 'rgba(255,36,66,0.2)' : 'transparent'};">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
+                            <div style="font-weight: 600; font-size: 0.92rem; color: var(--text-primary); display: flex; align-items: center;">
+                                ${unread ? '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ff2442;margin-right:6px;"></span>' : ''}
+                                ${safeTitle}
+                            </div>
+                            <span style="font-size: 0.7rem; color: var(--text-muted); white-space: nowrap; margin-left: 8px;">${timeStr}</span>
+                        </div>
+                        <div style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4; word-break: break-word;">${safeContent}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 转义 HTML，避免通知内容破坏布局或注入
+        function escapeNotificationHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        // 点击单条通知：标记已读并刷新
+        async function onNotificationClick(id) {
+            try {
+                const res = await notificationAPI.markRead(id);
+                if (res && res.code === 200) {
+                    await loadNotificationList();
+                    refreshNotificationBadge();
+                } else {
+                    showToast((res && res.message) || '操作失败', 'error');
+                }
+            } catch (e) {
+                console.error('标记通知已读失败:', e);
+                showToast('操作失败，请稍后重试', 'error');
+            }
+        }
+
+        // 全部已读
+        async function markAllNotificationsRead() {
+            try {
+                const res = await notificationAPI.markAllRead();
+                if (res && res.code === 200) {
+                    showToast('已全部标记为已读', 'success');
+                    updateNotificationBadge(0);
+                    await loadNotificationList();
+                } else {
+                    showToast((res && res.message) || '操作失败', 'error');
+                }
+            } catch (e) {
+                console.error('全部已读失败:', e);
+                showToast('操作失败，请稍后重试', 'error');
+            }
+        }
+        // ==================== 消息通知中心 END ====================
     </script>
 </body>
 

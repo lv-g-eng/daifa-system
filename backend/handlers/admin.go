@@ -80,8 +80,20 @@ func CreateMerchant(c *gin.Context) {
 
 // ListMerchants 商家列表 (总后台)
 func ListMerchants(c *gin.Context) {
+	keyword := c.Query("keyword")
+	status := c.Query("status")
+
+	query := config.DB.Where("role = ?", "merchant")
+	if keyword != "" {
+		kw := "%" + keyword + "%"
+		query = query.Where("username LIKE ? OR nickname LIKE ? OR phone LIKE ?", kw, kw, kw)
+	}
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+
 	var merchants []models.User
-	config.DB.Where("role = ?", "merchant").Order("created_at DESC").Find(&merchants)
+	query.Order("created_at DESC").Find(&merchants)
 
 	list := make([]gin.H, 0)
 	for _, m := range merchants {
@@ -212,8 +224,20 @@ func AdminStats(c *gin.Context) {
 
 // ListUsers 用户列表 (总后台)
 func ListUsers(c *gin.Context) {
+	keyword := c.Query("keyword")
+	status := c.Query("status")
+
+	query := config.DB.Where("role = ?", "user")
+	if keyword != "" {
+		kw := "%" + keyword + "%"
+		query = query.Where("username LIKE ? OR nickname LIKE ? OR phone LIKE ?", kw, kw, kw)
+	}
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+
 	var users []models.User
-	config.DB.Where("role = ?", "user").Order("created_at DESC").Find(&users)
+	query.Order("created_at DESC").Find(&users)
 
 	list := make([]gin.H, 0)
 	for _, u := range users {

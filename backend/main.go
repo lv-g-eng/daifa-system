@@ -131,6 +131,11 @@ func main() {
 				// 系统设置
 				merchant.GET("/config", handlers.GetMerchantConfig)
 				merchant.PUT("/config", handlers.UpdateMerchantConfig)
+
+				// 数据导出（Excel）
+				merchant.GET("/export/tasks", handlers.ExportMerchantTasks)
+				merchant.GET("/export/withdrawals", handlers.ExportMerchantWithdrawals)
+				merchant.GET("/export/commissions", handlers.ExportMerchantCommissions)
 			}
 
 			// 用户端 (user)
@@ -152,6 +157,12 @@ func main() {
 				user.GET("/withdrawals", handlers.ListUserWithdrawals)
 				user.GET("/orders", handlers.ListUserOrders)
 				user.GET("/referrals", handlers.GetReferralInfo)
+
+				// 消息通知中心
+				user.GET("/notifications", handlers.ListNotifications)
+				user.GET("/notifications/unread-count", handlers.UnreadNotificationCount)
+				user.PUT("/notifications/read", handlers.MarkNotificationRead)
+				user.PUT("/notifications/read-all", handlers.MarkAllNotificationsRead)
 			}
 		}
 	}

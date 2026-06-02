@@ -423,11 +423,19 @@ func ListMerchantTasks(c *gin.Context) {
 	userID, _ := c.Get("userID")
 	merchantID := userID.(uint)
 
+	keyword := c.Query("keyword")
+	status := c.Query("status")
+
+	query := config.DB.Where("merchant_id = ?", merchantID)
+	if keyword != "" {
+		query = query.Where("project_name LIKE ?", "%"+keyword+"%")
+	}
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+
 	var tasks []models.Task
-	config.DB.Where("merchant_id = ?", merchantID).
-		Preload("Platform").
-		Order("created_at DESC").
-		Find(&tasks)
+	query.Preload("Platform").Order("created_at DESC").Find(&tasks)
 
 	c.JSON(http.StatusOK, gin.H{
 		"code": 200,
@@ -589,6 +597,19 @@ func ReviewSubmission(c *gin.Context) {
 	}
 
 	log.Printf("[ReviewSubmission] Successfully updated submission ID=%s to status=%s", id, submission.Status)
+
+	// 通知用户审核结果
+	if submission.Status == "approved" {
+		CreateNotification(submission.UserID, "任务审核通过",
+			fmt.Sprintf("您的任务提交已通过审核，收益 ¥%.2f 已到账。", submission.TotalAmount), "task")
+	} else if submission.Status == "rejected" {
+		reason := req.RejectReason
+		if reason == "" {
+			reason = "未说明原因"
+		}
+		CreateNotification(submission.UserID, "任务审核未通过",
+			"很抱歉，您的任务提交未通过审核。原因："+reason, "task")
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    200,
@@ -924,8 +945,20 @@ func findJSONValue(content, key string) string {
 
 // ListMerchantUsers 用户列表 (商家)
 func ListMerchantUsers(c *gin.Context) {
+	keyword := c.Query("keyword")
+	status := c.Query("status")
+
+	query := config.DB.Where("role = ?", "user")
+	if keyword != "" {
+		kw := "%" + keyword + "%"
+		query = query.Where("username LIKE ? OR nickname LIKE ? OR phone LIKE ?", kw, kw, kw)
+	}
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+
 	var users []models.User
-	config.DB.Where("role = ?", "user").Order("created_at DESC").Find(&users)
+	query.Order("created_at DESC").Find(&users)
 
 	var list []gin.H
 	for _, u := range users {
@@ -1020,8 +1053,8 @@ func ProcessWithdrawal(c *gin.Context) {
 		return
 	}
 
-	// 获取当前操作者ID
-	merchantID, _ := c.Get("user_id")
+	// 获取当前操作者ID（中间件设置的键是 userID）
+	merchantID, _ := c.Get("userID")
 	now := time.Now()
 
 	withdrawal.Status = req.Status
@@ -1054,6 +1087,19 @@ func ProcessWithdrawal(c *gin.Context) {
 	}
 
 	config.DB.Save(&withdrawal)
+
+	// 通知用户提现处理结果
+	switch req.Status {
+	case "approved":
+		CreateNotification(withdrawal.UserID, "提现已通过",
+			fmt.Sprintf("您的提现申请 ¥%.2f 已审核通过，请等待打款。", withdrawal.Amount), "withdrawal")
+	case "paid":
+		CreateNotification(withdrawal.UserID, "提现已打款",
+			fmt.Sprintf("您的提现 ¥%.2f 已打款，请注意查收。", withdrawal.Amount), "withdrawal")
+	case "rejected":
+		CreateNotification(withdrawal.UserID, "提现被驳回",
+			"您的提现申请被驳回，金额已退回余额。原因："+req.RejectReason, "withdrawal")
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"code":    200,

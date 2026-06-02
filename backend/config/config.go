@@ -99,6 +99,7 @@ func InitDB() {
 		&models.Invitation{},
 		&models.Commission{},
 		&models.SystemConfig{},
+		&models.Notification{},
 	)
 	if err != nil {
 		log.Printf("数据库迁移警告: %v", err)

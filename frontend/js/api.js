@@ -140,6 +140,30 @@ async function uploadFiles(files) {
   return response.json();
 }
 
+// 导出文件（带鉴权，blob 下载，强制文件名）
+async function exportFile(url, filename) {
+  const token = getToken();
+  try {
+    showToast('正在导出...');
+    const resp = await fetch(API_BASE + url, {
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+    });
+    if (!resp.ok) throw new Error('导出失败 ' + resp.status);
+    const blob = await resp.blob();
+    const objUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = objUrl;
+    link.download = filename || 'export.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(objUrl), 1500);
+    showToast('导出成功');
+  } catch (e) {
+    showToast(e.message || '导出失败', 'error');
+  }
+}
+
 // API 接口
 
 // 认证
@@ -152,13 +176,13 @@ const authAPI = {
 // 总后台
 const adminAPI = {
   getStats: () => get('/admin/stats'),
-  listMerchants: () => get('/admin/merchants'),
+  listMerchants: (params) => get('/admin/merchants', params),
   createMerchant: (data) => post('/admin/merchants', data),
   updateMerchant: (id, data) => put(`/admin/merchants/${id}`, data),
   deleteMerchant: (id) => del(`/admin/merchants/${id}`),
   verifyPayment: (id, verified) => put(`/admin/users/${id}/verify-payment`, { verified }),
   // 用户管理
-  listUsers: () => get('/admin/users'),
+  listUsers: (params) => get('/admin/users', params),
   blockUser: (id, block) => put(`/admin/users/${id}/block`, { block }),
   deleteUser: (id) => del(`/admin/users/${id}`),
   // 提现管理
@@ -185,7 +209,7 @@ const merchantAPI = {
   createPublishCode: (data) => post('/merchant/publish-codes', data),
 
   // 任务
-  listTasks: () => get('/merchant/tasks'),
+  listTasks: (params) => get('/merchant/tasks', params),
   createTask: (data) => post('/merchant/tasks', data),
 
   // 审核
@@ -194,12 +218,17 @@ const merchantAPI = {
   checkLink: (id) => post(`/merchant/submissions/${id}/check`),
 
   // 用户
-  listUsers: () => get('/merchant/users'),
+  listUsers: (params) => get('/merchant/users', params),
   blockUser: (id, block) => put(`/merchant/users/${id}/block`, { block }),
 
   // 提现
   listWithdrawals: (params) => get('/merchant/withdrawals', params),
   processWithdrawal: (id, data) => put(`/merchant/withdrawals/${id}`, data),
+
+  // 数据导出（Excel）
+  exportTasks: () => exportFile('/merchant/export/tasks', 'tasks.xlsx'),
+  exportWithdrawals: (status) => exportFile('/merchant/export/withdrawals' + (status ? '?status=' + status : ''), 'withdrawals.xlsx'),
+  exportCommissions: () => exportFile('/merchant/export/commissions', 'commissions.xlsx'),
 };
 
 // 用户端
@@ -242,6 +271,14 @@ const publicAPI = {
   listPlatforms: () => get('/platforms'),
   usePublishCode: (code) => get(`/publish-codes/${code}`),
   getCategories: () => get('/categories'),
+};
+
+// 消息通知中心
+const notificationAPI = {
+  list: (params) => get('/user/notifications', params),
+  unreadCount: () => get('/user/notifications/unread-count'),
+  markRead: (id) => put('/user/notifications/read?id=' + id),
+  markAllRead: () => put('/user/notifications/read-all'),
 };
 
 // Toast 提示

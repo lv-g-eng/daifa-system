@@ -215,6 +215,17 @@ type Invitation struct {
 	Invitee *User `gorm:"foreignKey:InviteeID" json:"invitee,omitempty"`
 }
 
+// Notification 通知/消息模型
+type Notification struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	UserID    uint      `gorm:"not null;index" json:"user_id"`
+	Title     string    `gorm:"size:200;not null" json:"title"`
+	Content   string    `gorm:"type:text" json:"content"`
+	Type      string    `gorm:"size:30;default:system;index" json:"type"` // system, task, withdrawal, commission
+	IsRead    bool      `gorm:"default:false;index" json:"is_read"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 // SystemConfig 系统配置模型
 type SystemConfig struct {
 	ID          uint      `gorm:"primaryKey" json:"id"`
@@ -239,3 +250,4 @@ func (Withdrawal) TableName() string     { return "withdrawals" }
 func (Commission) TableName() string     { return "commissions" }
 func (Invitation) TableName() string     { return "invitations" }
 func (SystemConfig) TableName() string   { return "system_config" }
+func (Notification) TableName() string   { return "notifications" }

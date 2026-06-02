@@ -126,9 +126,14 @@
                 </div>
 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                    <div style="display: flex; gap: 1rem;">
+                    <div style="display: flex; gap: 1rem; align-items: center;">
                         <input type="text" class="form-input" placeholder="搜索商家..." id="searchMerchant"
                             style="width: 300px;" onkeyup="filterMerchants()">
+                        <input type="text" class="form-input" placeholder="服务端搜索商家..." id="serverSearchMerchant"
+                            style="width: 220px;" onkeydown="if(event.key==='Enter')searchMerchants()">
+                        <button class="btn btn-outline" onclick="searchMerchants()">
+                            <i class="fas fa-search"></i> 搜索
+                        </button>
                     </div>
                     <button class="btn btn-primary" onclick="showAddMerchantModal()">
                         <i class="fas fa-plus"></i> 添加商家
@@ -172,8 +177,15 @@
                 </div>
 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                    <input type="text" class="form-input" placeholder="搜索用户..." id="searchUser" style="width: 300px;"
-                        onkeyup="filterUsers()">
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <input type="text" class="form-input" placeholder="搜索用户..." id="searchUser" style="width: 300px;"
+                            onkeyup="filterUsers()">
+                        <input type="text" class="form-input" placeholder="服务端搜索用户..." id="serverSearchUser"
+                            style="width: 220px;" onkeydown="if(event.key==='Enter')searchUsers()">
+                        <button class="btn btn-outline" onclick="searchUsers()">
+                            <i class="fas fa-search"></i> 搜索
+                        </button>
+                    </div>
                 </div>
 
                 <div class="card">
@@ -362,12 +374,21 @@
         }
 
         // ========== 商家管理 ==========
-        async function loadMerchants() {
-            const res = await adminAPI.listMerchants();
+        async function loadMerchants(keyword = '') {
+            const params = keyword ? { keyword } : undefined;
+            const res = await adminAPI.listMerchants(params);
             if (res.code === 200) {
                 merchants = res.data || [];
                 renderMerchants();
             }
+        }
+
+        // 服务端搜索商家：读取输入框 -> 调用 API -> 复用渲染逻辑
+        async function searchMerchants() {
+            const keyword = document.getElementById('serverSearchMerchant').value.trim();
+            // 清空客户端过滤框，避免其残留文本再次过滤掉服务端结果
+            document.getElementById('searchMerchant').value = '';
+            await loadMerchants(keyword);
         }
 
         function renderMerchants() {
@@ -476,12 +497,22 @@
         }
 
         // ========== 用户管理 ==========
-        async function loadUsers() {
-            const res = await get('/admin/users');
+        async function loadUsers(keyword = '') {
+            const res = keyword
+                ? await adminAPI.listUsers({ keyword })
+                : await get('/admin/users');
             if (res.code === 200) {
                 users = res.data || [];
                 renderUsers();
             }
+        }
+
+        // 服务端搜索用户：读取输入框 -> 调用 API -> 复用渲染逻辑
+        async function searchUsers() {
+            const keyword = document.getElementById('serverSearchUser').value.trim();
+            // 清空客户端过滤框，避免其残留文本再次过滤掉服务端结果
+            document.getElementById('searchUser').value = '';
+            await loadUsers(keyword);
         }
 
         function renderUsers() {

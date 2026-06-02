@@ -267,7 +267,19 @@
                 </div>
 
                 <div class="toolbar">
+                    <div class="toolbar-left">
+                        <input type="text" class="form-input" id="taskSearchInput" placeholder="搜索任务名称"
+                            style="width: 200px;" onkeydown="if(event.key==='Enter')searchTasks()">
+                        <button class="btn btn-outline" onclick="searchTasks()" style="margin-left: 0.5rem;">
+                            <i class="fas fa-search"></i>
+                            搜索
+                        </button>
+                    </div>
                     <div class="toolbar-right">
+                        <button class="btn btn-outline" onclick="merchantAPI.exportTasks()" style="margin-right: 0.5rem;">
+                            <i class="fas fa-file-excel"></i>
+                            导出Excel
+                        </button>
                         <button class="btn btn-primary" onclick="showAddTaskModal()">
                             <i class="fas fa-plus"></i>
                             发布任务
@@ -353,6 +365,17 @@
                     <p class="page-subtitle">管理平台用户</p>
                 </div>
 
+                <div class="toolbar">
+                    <div class="toolbar-left">
+                        <input type="text" class="form-input" id="userSearchInput" placeholder="搜索用户名/昵称"
+                            style="width: 200px;" onkeydown="if(event.key==='Enter')searchUsers()">
+                        <button class="btn btn-outline" onclick="searchUsers()" style="margin-left: 0.5rem;">
+                            <i class="fas fa-search"></i>
+                            搜索
+                        </button>
+                    </div>
+                </div>
+
                 <div class="card">
                     <div class="table-container">
                         <table class="table">
@@ -384,9 +407,16 @@
 
             <!-- 提现管理 -->
             <section id="withdrawalsSection" style="display: none;">
-                <div class="page-header">
-                    <h1 class="page-title">提现管理</h1>
-                    <p class="page-subtitle">处理用户提现申请</p>
+                <div class="page-header"
+                    style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <h1 class="page-title">提现管理</h1>
+                        <p class="page-subtitle">处理用户提现申请</p>
+                    </div>
+                    <button class="btn btn-outline" onclick="merchantAPI.exportWithdrawals()">
+                        <i class="fas fa-file-excel"></i>
+                        导出Excel
+                    </button>
                 </div>
 
                 <div class="tabs">
@@ -487,9 +517,16 @@
 
             <!-- 分销管理 -->
             <section id="distributionSection" style="display: none;">
-                <div class="page-header">
-                    <h1 class="page-title">分销管理</h1>
-                    <p class="page-subtitle">管理用户邀请和佣金</p>
+                <div class="page-header"
+                    style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <h1 class="page-title">分销管理</h1>
+                        <p class="page-subtitle">管理用户邀请和佣金</p>
+                    </div>
+                    <button class="btn btn-outline" onclick="merchantAPI.exportCommissions()">
+                        <i class="fas fa-file-excel"></i>
+                        导出Excel
+                    </button>
                 </div>
 
                 <div class="grid grid-4">
@@ -2675,8 +2712,8 @@
         }
 
         // 任务管理
-        async function loadTasks() {
-            const res = await merchantAPI.listTasks();
+        async function loadTasks(keyword = '') {
+            const res = await merchantAPI.listTasks(keyword ? { keyword } : {});
             const tbody = document.getElementById('taskList');
 
             if (res.code === 200 && res.data && res.data.length > 0) {
@@ -2694,6 +2731,11 @@
             } else {
                 tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><i class="fas fa-tasks"></i><h3>暂无任务</h3></div></td></tr>';
             }
+        }
+
+        function searchTasks() {
+            const input = document.getElementById('taskSearchInput');
+            loadTasks(input ? input.value.trim() : '');
         }
 
         function showAddTaskModal() {
@@ -2894,8 +2936,8 @@
         }
 
         // 用户管理
-        async function loadUsers() {
-            const res = await merchantAPI.listUsers();
+        async function loadUsers(keyword = '') {
+            const res = await merchantAPI.listUsers(keyword ? { keyword } : {});
             const tbody = document.getElementById('userList');
 
             if (res.code === 200 && res.data && res.data.length > 0) {
@@ -2918,6 +2960,11 @@
             } else {
                 tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><i class="fas fa-users"></i><h3>暂无用户</h3></div></td></tr>';
             }
+        }
+
+        function searchUsers() {
+            const input = document.getElementById('userSearchInput');
+            loadUsers(input ? input.value.trim() : '');
         }
 
         async function toggleBlock(id, block) {
