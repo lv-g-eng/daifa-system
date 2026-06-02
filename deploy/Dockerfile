@@ -1,5 +1,6 @@
 # ===== 阶段1：构建 Go 二进制 =====
-FROM golang:1.21-alpine AS builder
+# 注意：go.mod 因 excelize/v2 依赖要求 Go >= 1.24，构建镜像须匹配
+FROM golang:1.24-alpine AS builder
 
 # 国内构建加速（如在海外可改为 direct）
 ENV GOPROXY=https://goproxy.cn,direct \
